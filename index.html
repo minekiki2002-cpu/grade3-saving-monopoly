@@ -34,7 +34,7 @@
     .game-board {
       position: relative;
       aspect-ratio: 16 / 9;
-      min-height: 520px;
+      min-height: 500px;
       overflow: hidden;
       border-radius: 28px;
       background-image: url("assets/board-bg.png");
@@ -44,11 +44,11 @@
     }
     .tile {
       position: absolute;
-      width: 9.2%;
-      height: 13%;
+      width: 9.5%;
+      height: 12.5%;
       display: grid;
       place-items: center;
-      padding: .35rem;
+      padding: .25rem;
       border-radius: 16px;
       border: 2px solid rgba(23, 50, 77, .15);
       background: rgba(255, 255, 255, .76);
@@ -62,8 +62,8 @@
       outline: 4px solid rgba(255, 190, 59, .95);
       z-index: 5;
     }
-    .tile-title { font-size: clamp(10px, 1vw, 16px); font-weight: 1000; line-height: 1.05; }
-    .tile-sub { font-size: clamp(9px, .8vw, 12px); font-weight: 800; color: #416176; line-height: 1.1; }
+    .tile-title { font-size: clamp(10px, .9vw, 15px); font-weight: 1000; line-height: 1.05; }
+    .tile-sub { font-size: clamp(9px, .72vw, 12px); font-weight: 800; color: #416176; line-height: 1.1; }
     .animal {
       width: 34px;
       height: 34px;
@@ -79,16 +79,16 @@
     .tokens { position: absolute; left: 50%; top: 58%; transform: translateX(-50%); display: flex; gap: 2px; flex-wrap: wrap; justify-content: center; width: 92%; }
     .mission {
       position: absolute;
-      left: 24%;
-      top: 34%;
-      width: 38%;
-      min-height: 24%;
+      left: 31%;
+      top: 39%;
+      width: 30%;
+      min-height: 16%;
       display: grid;
       align-content: center;
-      border-radius: 24px;
-      background: rgba(255,255,255,.78);
+      border-radius: 18px;
+      background: rgba(255,255,255,.86);
       border: 3px dashed rgba(6, 124, 163, .45);
-      padding: 1rem;
+      padding: .65rem;
       text-align: center;
     }
     .card-zone {
@@ -99,8 +99,8 @@
       perspective: 900px;
       cursor: pointer;
     }
-    .card-zone.chance { top: 35%; }
-    .card-zone.fate { top: 61%; }
+    .card-zone.chance { top: 36%; }
+    .card-zone.fate { top: 62%; }
     .stack-card {
       position: absolute;
       inset: 0;
@@ -112,11 +112,30 @@
       font-size: clamp(20px, 3vw, 42px);
       border: 3px solid rgba(255,255,255,.55);
       box-shadow: 0 9px 0 rgba(23, 50, 77, .24);
+      overflow: hidden;
+    }
+    .stack-card::before {
+      content: "";
+      position: absolute;
+      inset: 10px;
+      border-radius: 12px;
+      opacity: .28;
+      background:
+        radial-gradient(circle at 20% 20%, rgba(255,255,255,.85) 0 6px, transparent 7px),
+        radial-gradient(circle at 80% 80%, rgba(255,255,255,.85) 0 6px, transparent 7px),
+        repeating-linear-gradient(45deg, rgba(255,255,255,.42) 0 8px, transparent 8px 18px);
+      border: 2px solid rgba(255,255,255,.65);
+    }
+    .stack-card .label {
+      position: relative;
+      z-index: 1;
     }
     .stack-card:nth-child(1) { transform: translate(10px, 10px) rotate(2deg); opacity: .75; }
     .stack-card:nth-child(2) { transform: translate(5px, 5px) rotate(-1deg); opacity: .9; }
     .stack-card:nth-child(3) { transform: translate(0, 0); }
     .card-zone.drawing .stack-card:nth-child(3) { animation: drawCard .72s ease both; }
+    .card-zone.drawing .stack-card:nth-child(3) .label { opacity: 0; }
+    .card-zone.drawing .stack-card:nth-child(3)::before { opacity: .72; }
     @keyframes drawCard {
       0% { transform: translate(0,0) rotateY(0deg) scale(1); }
       55% { transform: translate(-180px,-70px) rotateY(95deg) scale(1.05); }
@@ -201,7 +220,7 @@
     @media (max-width: 1100px) {
       .game-board { min-height: auto; }
       .tile { border-radius: 12px; padding: .2rem; }
-      .mission { left: 19%; top: 34%; width: 46%; padding: .55rem; }
+      .mission { left: 28%; top: 39%; width: 34%; padding: .55rem; }
       .card-zone { width: 20%; right: 3%; }
     }
     @media (max-width: 760px) {
@@ -226,11 +245,11 @@
     const names = ["柴柴", "橘貓", "兔兔", "熊熊", "狐狸", "貓熊"];
     const goals = [
       ["一套故事書", 500, 25],
-      ["烏克麗麗", 1200, 40],
+      ["烏克麗麗", 1200, 30],
       ["運動鞋", 900, 30],
       ["桌遊", 650, 25],
       ["耳機", 800, 30],
-      ["小型電腦基金", 3000, 60],
+      ["小型電腦基金", 3000, 30],
     ];
 
     const coordsWide = [
@@ -333,7 +352,8 @@
         goal: g[0],
         target: g[1],
         daily: g[2],
-        balance: 300,
+        cash: 300,
+        saved: 0,
         position: 0,
         active: true,
         dayLog: [],
@@ -369,6 +389,11 @@
       const [musicOn, setMusicOn] = useState(false);
       const [isMobile, setIsMobile] = useState(false);
       const audioReady = useRef(false);
+      const playersRef = useRef(players);
+
+      useEffect(() => {
+        playersRef.current = players;
+      }, [players]);
 
       useEffect(() => {
         const onResize = () => setIsMobile(window.innerWidth < 760);
@@ -420,43 +445,74 @@
           setMusicOn(false);
         }
       }
+      function setPlayersNow(next) {
+        playersRef.current = next;
+        setPlayers(next);
+      }
       function addEvent(id, event) {
-        setPlayers(list => list.map(p => {
+        const nextPlayers = playersRef.current.map(p => {
           if (p.id !== id) return p;
-          const next = p.balance + event.effect;
-          const item = { ...event, after: next };
-          return { ...p, balance: next, dayLog: [...p.dayLog, item], allLog: [item, ...p.allLog].slice(0, 8) };
-        }));
+          const nextCash = p.cash + event.effect;
+          const item = { ...event, afterCash: nextCash };
+          return { ...p, cash: nextCash, dayLog: [...p.dayLog, item], allLog: [item, ...p.allLog].slice(0, 8) };
+        });
+        setPlayersNow(nextPlayers);
+        return nextPlayers;
       }
       function nextActiveIndex(from) {
-        for (let step = 1; step <= players.length; step++) {
-          const idx = (from + step) % players.length;
-          if (players[idx].active) return idx;
+        const list = playersRef.current;
+        for (let step = 1; step <= list.length; step++) {
+          const idx = (from + step) % list.length;
+          if (list[idx].active) return idx;
         }
         return from;
       }
-      function finishTurn() {
+      function finishTurn(latestPlayers = playersRef.current) {
         const nextTurns = turnsThisDay + 1;
-        const stillActive = players.filter(p => p.active).length;
+        const stillActive = latestPlayers.filter(p => p.active).length;
         if (nextTurns >= stillActive && stillActive > 0) {
           setTurnsThisDay(nextTurns);
-          setTimeout(() => openSettlement(), 120);
+          setTimeout(() => openSettlement(playersRef.current), 120);
         } else {
           setTurnsThisDay(nextTurns);
           setCurrent(nextActiveIndex(current));
         }
       }
-      function openSettlement() {
+      function buildDaySettlement(sourcePlayers) {
+        return sourcePlayers.map(p => {
+          if (!p.active || p.cash < 0) return p;
+          const saveAmount = Math.min(p.daily, p.cash, Math.max(0, p.target - p.saved));
+          if (saveAmount <= 0) return p;
+          const saveEvent = {
+            title: "每日計畫存款",
+            effect: saveAmount,
+            kind: "存款",
+            note: `今天依計畫存入 ${money(saveAmount)}。`,
+            afterCash: p.cash - saveAmount,
+          };
+          return {
+            ...p,
+            cash: p.cash - saveAmount,
+            saved: p.saved + saveAmount,
+            dayLog: [...p.dayLog, saveEvent],
+            allLog: [saveEvent, ...p.allLog].slice(0, 8),
+          };
+        });
+      }
+      function openSettlement(sourcePlayers = playersRef.current) {
+        const settledPlayers = buildDaySettlement(sourcePlayers);
+        setPlayersNow(settledPlayers);
         settleSound();
-        setModal({ type: "settle", snapshot: players.map(p => ({ ...p })) });
+        setModal({ type: "settle", snapshot: settledPlayers.map(p => ({ ...p })) });
       }
       function continueNextDay() {
-        setPlayers(list => list.map(p => ({
+        const nextPlayers = playersRef.current.map(p => ({
           ...p,
-          active: p.active && p.balance >= 0,
+          active: p.active && p.cash >= 0,
           dayLog: [],
-        })));
-        const next = players.findIndex(p => p.active && p.balance >= 0);
+        }));
+        setPlayersNow(nextPlayers);
+        const next = nextPlayers.findIndex(p => p.active && p.cash >= 0);
         setCurrent(next >= 0 ? next : 0);
         setTurnsThisDay(0);
         setDay(d => d + 1);
@@ -476,27 +532,33 @@
         }, 650);
       }
       function applyCard(option) {
-        addEvent(player.id, { title: modal.card.title, effect: option.effect, kind: option.kind || modal.card.kind, note: option.note || modal.card.note });
+        const latest = addEvent(player.id, { title: modal.card.title, effect: option.effect, kind: option.kind || modal.card.kind, note: option.note || modal.card.note });
         setMessage(`${player.name}：${option.note || modal.card.note}（${money(option.effect)}）`);
         setModal(null);
-        finishTurn();
+        finishTurn(latest);
       }
       function answerQuestion(ans) {
         const q = modal.question;
+        let latest;
         if (ans === q.answer) {
-          addEvent(player.id, { title: "需要想要判斷成功", effect: q.reward, kind: "收入", note: q.why });
+          latest = addEvent(player.id, { title: "需要想要判斷成功", effect: q.reward, kind: "收入", note: q.why });
           setMessage(`答對了！${q.why} 小組得到 ${money(q.reward)}。`);
         } else {
-          addEvent(player.id, { title: "需要想要再想想", effect: 0, kind: "反思", note: q.why });
+          latest = addEvent(player.id, { title: "需要想要再想想", effect: 0, kind: "反思", note: q.why });
           setMessage(`先沒關係，我們一起修正：${q.why}`);
         }
         setModal(null);
-        finishTurn();
+        finishTurn(latest);
       }
       function handleTile(tile, passedStart) {
+        let latest = playersRef.current;
         if (passedStart || tile.type === "start") {
-          addEvent(player.id, { title: "經過起點領零用錢", effect: 100, kind: "收入", note: "一日收入入帳。" });
-          addEvent(player.id, { title: "依計畫先存錢", effect: player.daily, kind: "收入", note: `今天努力往「${player.goal}」前進。` });
+          latest = addEvent(player.id, { title: "經過起點領零用錢", effect: 100, kind: "收入", note: "零用錢進到手上現金，還不是已存金額。" });
+        }
+        if (tile.type === "start") {
+          setMessage(`${player.name} 來到起點，收入 ${money(100)}。一天結束時才會依每日計畫存錢。`);
+          finishTurn(latest);
+          return;
         }
         if (tile.type === "chance") return draw("chance", true);
         if (tile.type === "fate") return draw("fate", true);
@@ -522,9 +584,9 @@
         }
         const kind = tile.effect >= 0 ? "收入" : "支出";
         const note = tile.type === "need" ? "生活中的需要支出。" : tile.type === "eco" ? "環保行動讓花費變少。" : tile.type === "work" ? "努力完成日常工作得到收入。" : tile.sub;
-        addEvent(player.id, { title: tile.title, effect: tile.effect, kind, note });
+        latest = addEvent(player.id, { title: tile.title, effect: tile.effect, kind, note });
         setMessage(`${player.name} 來到「${tile.title}」，${kind} ${money(tile.effect)}。`);
-        finishTurn();
+        finishTurn(latest);
       }
       function roll() {
         if (modal || rolling || !player.active) return;
@@ -534,10 +596,11 @@
         const value = Math.ceil(Math.random() * 6);
         setTimeout(() => {
           setDice(value);
-          setPlayers(list => list.map(p => {
+          const movedPlayers = playersRef.current.map(p => {
             if (p.id !== player.id) return p;
             return { ...p, position: (p.position + value) % tiles.length };
-          }));
+          });
+          setPlayersNow(movedPlayers);
           const nextPos = (player.position + value) % tiles.length;
           const passed = player.position + value >= tiles.length;
           setMessage(`${player.name} 擲出 ${value} 點，走到「${tiles[nextPos].title}」。`);
@@ -546,7 +609,7 @@
         }, 980);
       }
       function resetGame() {
-        setPlayers(makePlayers());
+        setPlayersNow(makePlayers());
         setCurrent(0);
         setDay(1);
         setTurnsThisDay(0);
@@ -554,25 +617,25 @@
         setMessage("請先看右側儲蓄計畫，再按下骰子開始第一天。");
         setModal(null);
       }
-      const allOut = players.every(p => !p.active || p.balance < 0);
+      const allOut = players.every(p => !p.active || p.cash < 0);
 
       return <main className="app-shell px-3 py-4 sm:px-5">
         <section className="mx-auto max-w-[1800px]">
-          <header className="soft-card mb-4 rounded-[28px] bg-white/90 p-4 md:p-5">
-            <div className="flex flex-col gap-3 lg:flex-row lg:items-end lg:justify-between">
+          <header className="soft-card mb-3 rounded-[24px] bg-white/90 p-3 md:p-4">
+            <div className="flex flex-col gap-3 lg:flex-row lg:items-end lg:justify-start">
               <div>
                 <p className="inline-flex rounded-full bg-amber-100 px-4 py-2 text-sm font-black text-amber-900">PBL 專題：我的儲蓄計畫能撐過真實生活嗎？</p>
-                <h1 className="mt-3 text-3xl font-black leading-tight md:text-5xl">儲蓄與消費的選擇：生活理財大富翁</h1>
-                <p className="mt-2 font-bold text-slate-600">設計者：新北市網溪國小 Kiki 老師設計</p>
+                <h1 className="mt-2 text-3xl font-black leading-tight md:text-4xl">儲蓄與消費的選擇：生活理財大富翁</h1>
+                <p className="mt-1 font-bold text-slate-600">設計者：新北市網溪國小 Kiki 老師設計</p>
               </div>
-              <div className="flex flex-wrap gap-2">
-                <button onClick={toggleMusic} className="rounded-2xl bg-[#067ca3] px-4 py-3 font-black text-white shadow-[0_5px_0_rgba(23,50,77,.22)]">{musicOn ? "關閉音樂" : "播放音樂"}</button>
-                <button onClick={resetGame} className="rounded-2xl bg-slate-800 px-4 py-3 font-black text-white shadow-[0_5px_0_rgba(23,50,77,.22)]">重新開始</button>
+              <div className="flex flex-wrap gap-2 lg:pb-1">
+                <button onClick={toggleMusic} className="rounded-2xl bg-[#067ca3] px-4 py-2 font-black text-white shadow-[0_5px_0_rgba(23,50,77,.22)]">{musicOn ? "關閉音樂" : "播放音樂"}</button>
+                <button onClick={resetGame} className="rounded-2xl bg-slate-800 px-4 py-2 font-black text-white shadow-[0_5px_0_rgba(23,50,77,.22)]">重新開始</button>
               </div>
             </div>
           </header>
 
-          <section className="grid gap-4 xl:grid-cols-[1fr_500px]">
+          <section className="grid gap-3 xl:grid-cols-[1fr_500px]">
             <div className="soft-card rounded-[30px] bg-white p-3">
               <div className="game-board">
                 {tiles.map((t, i) => {
@@ -592,43 +655,45 @@
                   <p className="mt-3 text-xs font-black text-slate-500 md:text-sm">輪到：<span style={{ color: player.color }}>{player.animal} {player.name}</span> ｜ 已行動 {turnsThisDay}/{activePlayers.length}</p>
                 </div>
                 <button onClick={() => draw("chance")} className={`card-zone chance ${drawing === "chance" ? "drawing" : ""}`} aria-label="抽機會卡">
-                  <div className="stack-card bg-[#e85b4f]">機會</div><div className="stack-card bg-[#e85b4f]">機會</div><div className="stack-card bg-[#e85b4f]">機會</div>
+                  <div className="stack-card bg-[#e85b4f]"><span className="label">機會</span></div><div className="stack-card bg-[#e85b4f]"><span className="label">機會</span></div><div className="stack-card bg-[#e85b4f]"><span className="label">機會</span></div>
                 </button>
                 <button onClick={() => draw("fate")} className={`card-zone fate ${drawing === "fate" ? "drawing" : ""}`} aria-label="抽命運卡">
-                  <div className="stack-card bg-[#8379f2]">命運</div><div className="stack-card bg-[#8379f2]">命運</div><div className="stack-card bg-[#8379f2]">命運</div>
+                  <div className="stack-card bg-[#8379f2]"><span className="label">命運</span></div><div className="stack-card bg-[#8379f2]"><span className="label">命運</span></div><div className="stack-card bg-[#8379f2]"><span className="label">命運</span></div>
                 </button>
               </div>
             </div>
 
-            <aside className="grid gap-4">
-              <div className="soft-card rounded-[28px] bg-white p-4">
+            <aside className="grid content-start gap-3">
+              <div className="soft-card rounded-[24px] bg-white p-3">
                 <div className="flex items-center justify-between gap-3">
                   <div>
-                    <h2 className="text-2xl font-black">擲骰區</h2>
+                    <h2 className="text-xl font-black">擲骰區</h2>
                     <p className="text-sm font-bold text-slate-500">立體骰子會跳起來轉動</p>
                   </div>
                   <Dice value={dice} rolling={rolling} />
                 </div>
-                <button disabled={!!modal || rolling || allOut} onClick={roll} className="mt-4 w-full rounded-2xl bg-[#e85b4f] px-5 py-4 text-xl font-black text-white shadow-[0_8px_0_rgba(23,50,77,.22)] disabled:bg-slate-300">擲骰子</button>
+                <button disabled={!!modal || rolling || allOut} onClick={roll} className="mt-3 w-full rounded-2xl bg-[#e85b4f] px-5 py-3 text-xl font-black text-white shadow-[0_8px_0_rgba(23,50,77,.22)] disabled:bg-slate-300">擲骰子</button>
               </div>
 
-              <div className="soft-card rounded-[28px] bg-white p-4">
-                <h2 className="text-2xl font-black">六位玩家儲蓄計畫</h2>
-                <div className="mt-3 grid grid-cols-1 gap-3 sm:grid-cols-2 xl:grid-cols-3">
+              <div className="soft-card rounded-[24px] bg-white p-3">
+                <h2 className="text-xl font-black">六位玩家儲蓄計畫</h2>
+                <div className="mt-2 grid grid-cols-1 gap-2 sm:grid-cols-2 xl:grid-cols-3">
                   {players.map(p => {
-                    const pos = clamp(((p.balance + 10000) / 20000) * 100, 0, 100);
-                    return <div key={p.id} className={`rounded-2xl border-2 p-3 ${p.id === current ? "border-amber-400 bg-amber-50" : "border-slate-100 bg-slate-50"} ${(!p.active || p.balance < 0) ? "opacity-55 grayscale" : ""}`}>
+                    const progressValue = p.cash < 0 ? p.cash : p.saved;
+                    const pos = clamp(((progressValue + 10000) / 20000) * 100, 0, 100);
+                    return <div key={p.id} className={`rounded-2xl border-2 p-2 ${p.id === current ? "border-amber-400 bg-amber-50" : "border-slate-100 bg-slate-50"} ${(!p.active || p.cash < 0) ? "opacity-55 grayscale" : ""}`}>
                       <div className="flex items-center justify-between">
                         <span className="animal" style={{ color: p.color }}>{p.animal}</span>
-                        <b className="text-sm">{(!p.active || p.balance < 0) ? "出局" : money(p.balance)}</b>
+                        <b className="text-xs">{(!p.active || p.cash < 0) ? "出局" : `已存 ${money(p.saved)}`}</b>
                       </div>
-                      <input value={p.name} onChange={e => setPlayers(list => list.map(x => x.id === p.id ? {...x, name: e.target.value} : x))} className="mt-2 w-full rounded-xl border border-slate-200 bg-white px-2 py-1 font-black" />
-                      <input value={p.goal} onChange={e => setPlayers(list => list.map(x => x.id === p.id ? {...x, goal: e.target.value} : x))} className="mt-2 w-full rounded-xl border border-slate-200 bg-white px-2 py-1 text-sm" />
-                      <div className="mt-2 grid grid-cols-2 gap-2 text-xs font-bold">
-                        <label>目標<input type="number" value={p.target} onChange={e => setPlayers(list => list.map(x => x.id === p.id ? {...x, target: Number(e.target.value)} : x))} className="mt-1 w-full rounded-lg border px-2 py-1" /></label>
-                        <label>每日存<input type="number" value={p.daily} onChange={e => setPlayers(list => list.map(x => x.id === p.id ? {...x, daily: Number(e.target.value)} : x))} className="mt-1 w-full rounded-lg border px-2 py-1" /></label>
+                      <div className="mt-1 text-xs font-black text-slate-500">現金 {money(p.cash)}</div>
+                      <input value={p.name} onChange={e => setPlayersNow(playersRef.current.map(x => x.id === p.id ? {...x, name: e.target.value} : x))} className="mt-1 w-full rounded-xl border border-slate-200 bg-white px-2 py-1 font-black" />
+                      <input value={p.goal} onChange={e => setPlayersNow(playersRef.current.map(x => x.id === p.id ? {...x, goal: e.target.value} : x))} className="mt-1 w-full rounded-xl border border-slate-200 bg-white px-2 py-1 text-sm" />
+                      <div className="mt-1 grid grid-cols-2 gap-2 text-xs font-bold">
+                        <label>目標<input type="number" value={p.target} onChange={e => setPlayersNow(playersRef.current.map(x => x.id === p.id ? {...x, target: Number(e.target.value)} : x))} className="mt-1 w-full rounded-lg border px-2 py-1" /></label>
+                        <label>每日存<input type="number" value={p.daily} onChange={e => setPlayersNow(playersRef.current.map(x => x.id === p.id ? {...x, daily: Number(e.target.value)} : x))} className="mt-1 w-full rounded-lg border px-2 py-1" /></label>
                       </div>
-                      <div className="mt-3 flex justify-between text-[10px] font-black text-slate-500"><span>-10000</span><span>0</span><span>10000</span></div>
+                      <div className="mt-2 flex justify-between text-[10px] font-black text-slate-500"><span>-10000</span><span>0</span><span>10000</span></div>
                       <div className="progress-track"><span className="zero-line"></span><span className="progress-dot" style={{ left: `${pos}%`, background: p.color }}></span></div>
                     </div>;
                   })}
@@ -678,18 +743,19 @@
             {modal.type === "settle" && <>
               <span className="inline-flex rounded-full bg-amber-500 px-4 py-1 text-sm font-black text-white">一天過去</span>
               <h2 className="mt-3 text-3xl font-black">第 {day} 天結算</h2>
-              <p className="mt-2 font-bold text-slate-600">玩家 1～6 今天做了哪些事？看看收入、支出和已存金額。</p>
+              <p className="mt-2 font-bold text-slate-600">玩家 1～6 今天做了哪些事？收入支出先影響手上現金；一天結束後，才依每日計畫存入目標帳戶。</p>
               <div className="mt-4 grid gap-3">
                 {modal.snapshot.map(p => {
-                  const income = p.dayLog.filter(x => x.effect > 0).reduce((s, x) => s + x.effect, 0);
-                  const expense = Math.abs(p.dayLog.filter(x => x.effect < 0).reduce((s, x) => s + x.effect, 0));
-                  const out = p.balance < 0;
+                  const income = p.dayLog.filter(x => x.kind === "收入").reduce((s, x) => s + x.effect, 0);
+                  const expense = Math.abs(p.dayLog.filter(x => x.kind === "支出").reduce((s, x) => s + x.effect, 0));
+                  const savedToday = p.dayLog.filter(x => x.kind === "存款").reduce((s, x) => s + x.effect, 0);
+                  const out = p.cash < 0;
                   return <div key={p.id} className={`rounded-2xl border-2 p-3 ${out ? "border-red-200 bg-red-50" : "border-slate-100 bg-slate-50"}`}>
                     <div className="flex flex-wrap items-center justify-between gap-2">
                       <b className="text-lg"><span className="mr-2">{p.animal}</span>{p.name}</b>
-                      <span className={`rounded-full px-3 py-1 text-sm font-black ${out ? "bg-red-600 text-white" : "bg-emerald-100 text-emerald-900"}`}>{out ? "負債，淘汰出局" : `已存 ${money(p.balance)}`}</span>
+                      <span className={`rounded-full px-3 py-1 text-sm font-black ${out ? "bg-red-600 text-white" : "bg-emerald-100 text-emerald-900"}`}>{out ? "負債，淘汰出局" : `已存 ${money(p.saved)}`}</span>
                     </div>
-                    <div className="mt-2 text-sm font-bold text-slate-600">收入 {money(income)} ｜ 支出 {money(expense)} ｜ 目標：{p.goal}</div>
+                    <div className="mt-2 text-sm font-bold text-slate-600">收入 {money(income)} ｜ 支出 {money(expense)} ｜ 今日存入 {money(savedToday)} ｜ 手上現金 {money(p.cash)} ｜ 目標：{p.goal}</div>
                     <ul className="mt-2 space-y-1 text-sm leading-6">
                       {p.dayLog.length ? p.dayLog.map((e, i) => <li key={i}>• {e.title}：{money(e.effect)}，{e.note}</li>) : <li>• 今天沒有記錄到事件。</li>}
                     </ul>
