@@ -362,6 +362,9 @@
     }
     function money(n) { return `${n < 0 ? "-" : ""}$${Math.abs(n)}`; }
     function clamp(n, min, max) { return Math.max(min, Math.min(max, n)); }
+    function financialPosition(player) {
+      return player.cash + player.saved - 300;
+    }
 
     function Dice({ value, rolling }) {
       const pips = {
@@ -679,21 +682,21 @@
                 <h2 className="text-xl font-black">六位玩家儲蓄計畫</h2>
                 <div className="mt-2 grid grid-cols-1 gap-2 sm:grid-cols-2 xl:grid-cols-3">
                   {players.map(p => {
-                    const progressValue = p.cash < 0 ? p.cash : p.saved;
-                    const pos = clamp(((progressValue + 10000) / 20000) * 100, 0, 100);
+                    const progressValue = financialPosition(p);
+                    const pos = clamp(((progressValue + 1000) / 2000) * 100, 0, 100);
                     return <div key={p.id} className={`rounded-2xl border-2 p-2 ${p.id === current ? "border-amber-400 bg-amber-50" : "border-slate-100 bg-slate-50"} ${(!p.active || p.cash < 0) ? "opacity-55 grayscale" : ""}`}>
                       <div className="flex items-center justify-between">
                         <span className="animal" style={{ color: p.color }}>{p.animal}</span>
                         <b className="text-xs">{(!p.active || p.cash < 0) ? "出局" : `已存 ${money(p.saved)}`}</b>
                       </div>
-                      <div className="mt-1 text-xs font-black text-slate-500">現金 {money(p.cash)}</div>
+                      <div className="mt-1 text-xs font-black text-slate-500">現金 {money(p.cash)} ｜ 狀態 {money(progressValue)}</div>
                       <input value={p.name} onChange={e => setPlayersNow(playersRef.current.map(x => x.id === p.id ? {...x, name: e.target.value} : x))} className="mt-1 w-full rounded-xl border border-slate-200 bg-white px-2 py-1 font-black" />
                       <input value={p.goal} onChange={e => setPlayersNow(playersRef.current.map(x => x.id === p.id ? {...x, goal: e.target.value} : x))} className="mt-1 w-full rounded-xl border border-slate-200 bg-white px-2 py-1 text-sm" />
                       <div className="mt-1 grid grid-cols-2 gap-2 text-xs font-bold">
                         <label>目標<input type="number" value={p.target} onChange={e => setPlayersNow(playersRef.current.map(x => x.id === p.id ? {...x, target: Number(e.target.value)} : x))} className="mt-1 w-full rounded-lg border px-2 py-1" /></label>
                         <label>每日存<input type="number" value={p.daily} onChange={e => setPlayersNow(playersRef.current.map(x => x.id === p.id ? {...x, daily: Number(e.target.value)} : x))} className="mt-1 w-full rounded-lg border px-2 py-1" /></label>
                       </div>
-                      <div className="mt-2 flex justify-between text-[10px] font-black text-slate-500"><span>-10000</span><span>0</span><span>10000</span></div>
+                      <div className="mt-2 flex justify-between text-[10px] font-black text-slate-500"><span>-1000</span><span>0</span><span>1000</span></div>
                       <div className="progress-track"><span className="zero-line"></span><span className="progress-dot" style={{ left: `${pos}%`, background: p.color }}></span></div>
                     </div>;
                   })}
