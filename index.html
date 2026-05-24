@@ -44,14 +44,14 @@
     }
     .tile {
       position: absolute;
-      width: 9.5%;
-      height: 12.5%;
+      width: 12.4%;
+      height: 14%;
       display: grid;
       place-items: center;
-      padding: .25rem;
-      border-radius: 16px;
-      border: 2px solid rgba(23, 50, 77, .15);
-      background: rgba(255, 255, 255, .76);
+      padding: .35rem;
+      border-radius: 18px;
+      border: 3px solid rgba(23, 50, 77, .14);
+      background: rgba(255, 255, 255, .62);
       backdrop-filter: blur(2px);
       transition: transform .22s ease, box-shadow .22s ease;
       text-align: center;
@@ -62,8 +62,8 @@
       outline: 4px solid rgba(255, 190, 59, .95);
       z-index: 5;
     }
-    .tile-title { font-size: clamp(10px, .9vw, 15px); font-weight: 1000; line-height: 1.05; }
-    .tile-sub { font-size: clamp(9px, .72vw, 12px); font-weight: 800; color: #416176; line-height: 1.1; }
+    .tile-title { font-size: clamp(12px, 1.05vw, 18px); font-weight: 1000; line-height: 1.05; }
+    .tile-sub { font-size: clamp(10px, .82vw, 14px); font-weight: 900; color: #416176; line-height: 1.08; }
     .animal {
       width: 34px;
       height: 34px;
@@ -76,7 +76,7 @@
       font-size: 22px;
     }
     .animal.small { width: 26px; height: 26px; font-size: 17px; }
-    .tokens { position: absolute; left: 50%; top: 58%; transform: translateX(-50%); display: flex; gap: 2px; flex-wrap: wrap; justify-content: center; width: 92%; }
+    .tokens { position: absolute; left: 50%; top: 56%; transform: translateX(-50%); display: flex; gap: 2px; flex-wrap: wrap; justify-content: center; width: 92%; }
     .mission {
       position: absolute;
       left: 31%;
@@ -219,13 +219,13 @@
     }
     @media (max-width: 1100px) {
       .game-board { min-height: auto; }
-      .tile { border-radius: 12px; padding: .2rem; }
+      .tile { width: 13%; height: 13.5%; border-radius: 12px; padding: .2rem; }
       .mission { left: 28%; top: 39%; width: 34%; padding: .55rem; }
       .card-zone { width: 20%; right: 3%; }
     }
     @media (max-width: 760px) {
       .game-board { aspect-ratio: 10 / 14; background-size: cover; background-position: center; min-height: 720px; }
-      .tile { width: 18%; height: 8%; }
+      .tile { width: 23%; height: 9%; }
       .mission { left: 12%; top: 36%; width: 55%; min-height: 20%; }
       .card-zone { right: 3%; width: 28%; height: 12%; }
       .card-zone.chance { top: 39%; }
@@ -253,17 +253,17 @@
     ];
 
     const coordsWide = [
-      [3, 5], [16, 5], [29, 5], [42, 5], [55, 5], [68, 5],
-      [68, 20], [68, 35], [68, 50], [55, 77], [42, 77], [29, 77],
-      [16, 77], [3, 77], [3, 62], [3, 47], [3, 32], [16, 32],
-      [29, 32], [42, 32], [55, 32], [55, 62], [42, 62], [29, 62],
+      [3.8, 5.2], [17.2, 5.2], [30.6, 5.2], [44.0, 5.2], [57.4, 5.2], [70.8, 5.2],
+      [70.8, 20.2], [70.8, 35.2], [70.8, 50.2], [70.8, 65.2], [57.4, 77.6], [44.0, 77.6],
+      [30.6, 77.6], [17.2, 77.6], [3.8, 77.6], [3.8, 62.6], [3.8, 47.6], [3.8, 32.6],
+      [17.2, 32.6], [30.6, 32.6], [44.0, 32.6], [57.4, 32.6], [57.4, 62.6], [44.0, 62.6],
     ];
 
     const coordsMobile = [
-      [4, 3], [28, 3], [52, 3], [76, 3], [76, 13], [76, 23],
-      [76, 33], [76, 43], [76, 53], [76, 63], [76, 73], [52, 85],
-      [28, 85], [4, 85], [4, 75], [4, 65], [4, 55], [4, 45],
-      [4, 35], [28, 25], [52, 25], [52, 63], [28, 63], [28, 45],
+      [4, 3], [28, 3], [52, 3], [73, 3], [73, 14], [73, 25],
+      [73, 36], [73, 47], [73, 58], [73, 69], [73, 80], [52, 86],
+      [28, 86], [4, 86], [4, 75], [4, 64], [4, 53], [4, 42],
+      [4, 31], [28, 25], [52, 25], [52, 64], [28, 64], [28, 45],
     ];
 
     const tiles = [
