@@ -75,8 +75,14 @@
       box-shadow: 0 3px 0 rgba(23, 50, 77, .2);
       font-size: 22px;
     }
-    .animal.small { width: 26px; height: 26px; font-size: 17px; }
-    .tokens { position: absolute; left: 50%; top: 56%; transform: translateX(-50%); display: flex; gap: 2px; flex-wrap: wrap; justify-content: center; width: 92%; }
+    .animal.small { width: 42px; height: 42px; font-size: 27px; }
+    .animal.moving { width: 84px; height: 84px; font-size: 54px; z-index: 20; animation: hopToken .42s ease; }
+    @keyframes hopToken {
+      0% { transform: translateY(0) scale(1); }
+      45% { transform: translateY(-18px) scale(1.18); }
+      100% { transform: translateY(0) scale(1); }
+    }
+    .tokens { position: absolute; left: 50%; top: 51%; transform: translateX(-50%); display: flex; gap: 3px; flex-wrap: wrap; justify-content: center; width: 96%; }
     .mission {
       position: absolute;
       left: 31%;
@@ -93,14 +99,14 @@
     }
     .card-zone {
       position: absolute;
-      right: 4%;
-      width: 18%;
-      height: 20%;
+      right: 1.2%;
+      width: 14.5%;
+      height: 17%;
       perspective: 900px;
       cursor: pointer;
     }
-    .card-zone.chance { top: 36%; }
-    .card-zone.fate { top: 62%; }
+    .card-zone.chance { top: 39%; }
+    .card-zone.fate { top: 61%; }
     .stack-card {
       position: absolute;
       inset: 0;
@@ -151,6 +157,13 @@
       transition: transform .35s ease;
     }
     .dice3d.rolling { animation: diceJump 1s cubic-bezier(.2,.9,.25,1.2); }
+    .dice3d.big-result {
+      position: fixed;
+      right: 10vw;
+      top: 18vh;
+      z-index: 70;
+      transform: scale(2.4) rotateX(-20deg) rotateY(25deg);
+    }
     @keyframes diceJump {
       0% { transform: translateY(0) rotateX(0) rotateY(0) rotateZ(0); }
       35% { transform: translateY(-60px) rotateX(260deg) rotateY(210deg) rotateZ(70deg); }
@@ -213,6 +226,18 @@
     }
     .modal-backdrop { background: rgba(10, 24, 38, .55); }
     .flip-in { animation: flipIn .45s ease both; transform-style: preserve-3d; }
+    .task-image {
+      width: 100%;
+      max-height: 260px;
+      object-fit: cover;
+      border-radius: 20px;
+      border: 3px solid rgba(23,50,77,.12);
+      margin: 14px 0;
+    }
+    .sortable-item {
+      cursor: grab;
+      user-select: none;
+    }
     @keyframes flipIn {
       from { transform: rotateY(90deg) scale(.92); opacity: .4; }
       to { transform: rotateY(0) scale(1); opacity: 1; }
@@ -243,13 +268,13 @@
     const animals = ["🐶", "🐱", "🐰", "🐻", "🦊", "🐼"];
     const colors = ["#e85b4f", "#067ca3", "#2fbf71", "#f59e0b", "#8379f2", "#ec4899"];
     const names = ["柴柴", "橘貓", "兔兔", "熊熊", "狐狸", "貓熊"];
-    const goals = [
-      ["一套故事書", 500, 25],
-      ["烏克麗麗", 1200, 30],
-      ["運動鞋", 900, 30],
-      ["桌遊", 650, 25],
-      ["耳機", 800, 30],
-      ["小型電腦基金", 3000, 30],
+    const purchaseItems = [
+      { item: "一本故事書", price: 180, daily: 20 },
+      { item: "文具組", price: 120, daily: 20 },
+      { item: "運動水壺", price: 250, daily: 25 },
+      { item: "桌遊小卡", price: 300, daily: 30 },
+      { item: "耳機收納盒", price: 220, daily: 25 },
+      { item: "美術材料包", price: 280, daily: 30 },
     ];
 
     const coordsWide = [
@@ -267,30 +292,30 @@
     ];
 
     const tiles = [
-      { type: "start", title: "GO", sub: "領零用錢", effect: 100 },
-      { type: "work", title: "整理書包", sub: "+30", effect: 30 },
+      { type: "start", title: "GO", sub: "起點" },
+      { type: "work", title: "整理書包", sub: "日常任務", effect: 30 },
       { type: "chance", title: "機會", sub: "抽牌" },
-      { type: "need", title: "早餐", sub: "-45", effect: -45 },
-      { type: "work", title: "回收高手", sub: "+40", effect: 40 },
+      { type: "need", title: "早餐", sub: "生活需要", effect: -45 },
+      { type: "work", title: "回收高手", sub: "日常任務", effect: 40 },
       { type: "fate", title: "命運", sub: "抽牌" },
-      { type: "want", title: "遊戲點數", sub: "想買", effect: -120 },
-      { type: "work", title: "閱讀分享", sub: "+60", effect: 60 },
-      { type: "need", title: "鞋子壞了", sub: "-220", effect: -220 },
+      { type: "want", title: "遊戲點數", sub: "想買", effect: -80 },
+      { type: "work", title: "閱讀分享", sub: "日常任務", effect: 60 },
+      { type: "rights", title: "鞋子壞了", sub: "消費權益", effect: 70 },
       { type: "chance", title: "機會", sub: "抽牌" },
-      { type: "rest", title: "想一想", sub: "判斷題" },
-      { type: "work", title: "家事小幫手", sub: "+50", effect: 50 },
-      { type: "start", title: "一圈", sub: "先存錢", effect: 100 },
+      { type: "label", title: "商品標示", sub: "聰明消費", effect: 60 },
+      { type: "work", title: "家事小幫手", sub: "日常任務", effect: 50 },
+      { type: "start", title: "一圈", sub: "回到起點" },
       { type: "fate", title: "命運", sub: "抽牌" },
-      { type: "want", title: "新玩具", sub: "心動", effect: -180 },
-      { type: "work", title: "準時作業", sub: "+45", effect: 45 },
-      { type: "need", title: "看醫生", sub: "-260", effect: -260 },
+      { type: "want", title: "新玩具", sub: "心動", effect: -120 },
+      { type: "work", title: "準時作業", sub: "日常任務", effect: 45 },
+      { type: "need", title: "看醫生", sub: "生活需要", effect: -220 },
       { type: "chance", title: "機會", sub: "抽牌" },
-      { type: "work", title: "惜物修理", sub: "+80", effect: 80 },
-      { type: "need", title: "水電分擔", sub: "-160", effect: -160 },
+      { type: "work", title: "惜物修理", sub: "日常任務", effect: 80 },
+      { type: "pay", title: "多元支付", sub: "流程挑戰", effect: 80 },
       { type: "fate", title: "命運", sub: "抽牌" },
       { type: "want", title: "飲料點心", sub: "好想喝", effect: -70 },
-      { type: "work", title: "小組合作", sub: "+90", effect: 90 },
-      { type: "eco", title: "環保杯", sub: "+25", effect: 25 },
+      { type: "work", title: "小組合作", sub: "日常任務", effect: 90 },
+      { type: "eco", title: "環保杯", sub: "環保消費", effect: 25 },
     ];
 
     const chanceCards = [
@@ -299,7 +324,7 @@
         text: "畫面一直閃：「只剩 10 分鐘！」你心裡怎麼想？",
         options: [
           { label: "當然要先問問自己：少了它生活會怎樣呀！", effect: 30, kind: "收入", note: "抵抗誘惑，儲蓄計畫更穩。" },
-          { label: "當然要買限定造型呀！", effect: -180, kind: "支出", note: "這是想要型消費，記得看它讓目標慢了幾天。" },
+          { label: "當然要買限定造型呀！", effect: -100, kind: "支出", note: "這是想要型消費，記得看它讓目標慢了幾天。" },
         ],
       },
       {
@@ -307,14 +332,14 @@
         text: "同學忘了帶錢買午餐，想借你 80 元，明天還。",
         options: [
           { label: "當然要先確認是吃飯需要，再借呀！", effect: -80, kind: "支出", note: "有同理心，也要記錄借出的錢。" },
-          { label: "當然要全部借出去，朋友最重要呀！", effect: -180, kind: "支出", note: "幫人很好，但也要量力而為，不能讓自己陷入困難。" },
+          { label: "當然要全部借出去，朋友最重要呀！", effect: -120, kind: "支出", note: "幫人很好，但也要量力而為，不能讓自己陷入困難。" },
         ],
       },
       {
         title: "發票對獎",
         text: "你把統一發票收好，今天對獎發現中了小獎。",
         options: [
-          { label: "當然要把獎金存起來呀！", effect: 200, kind: "收入", note: "保存發票也能保障權益，還可能有小驚喜。" },
+          { label: "當然要把獎金存起來呀！", effect: 100, kind: "收入", note: "保存發票也能保障權益，還可能有小驚喜。" },
           { label: "當然要請大家喝飲料呀！", effect: -120, kind: "支出", note: "分享很溫暖，但可以先想預算和目標。" },
         ],
       },
@@ -329,13 +354,40 @@
     ];
 
     const fateCards = [
-      { title: "看醫生與買藥", text: "感冒了，需要看醫生與買藥。", effect: -280, kind: "支出", note: "健康是需要，緊急預備金很重要。" },
-      { title: "摔壞同學的水壺", text: "跑太快不小心撞倒同學水壺，必須賠償。", effect: -250, kind: "支出", note: "生活中會有意外支出，也要學會負責任。" },
-      { title: "家裡水電費增加", text: "天氣熱，家中電費變高，這週分擔一點。", effect: -220, kind: "支出", note: "固定支出要放進計畫，節能也能省錢。" },
-      { title: "紅包存一半", text: "長輩給紅包，你決定先存一半。", effect: 500, kind: "收入", note: "先存再花，是達成目標的好策略。" },
-      { title: "天災愛心捐款", text: "學校發起小額捐款，幫助受災家庭。", effect: -100, kind: "支出", note: "在能力範圍內助人，是有意義的金錢運用。" },
-      { title: "幫鄰居整理回收", text: "你用下課後時間幫忙分類回收。", effect: 120, kind: "收入", note: "收入可以來自努力，也能結合環保行動。" },
+      { title: "看醫生與買藥", text: "感冒了，需要看醫生與買藥。", effect: -220, kind: "支出", note: "健康是需要，緊急預備金很重要。" },
+      { title: "摔壞同學的水壺", text: "跑太快不小心撞倒同學水壺，必須賠償。", effect: -180, kind: "支出", note: "生活中會有意外支出，也要學會負責任。" },
+      { title: "家裡水電費增加", text: "天氣熱，家中電費變高，這週分擔一點。", effect: -120, kind: "支出", note: "固定支出要放進計畫，節能也能省錢。" },
+      { title: "紅包存一半", text: "長輩給紅包，你決定先存一半。", effect: 120, kind: "收入", note: "先存再花，是達成目標的好策略。" },
+      { title: "天災愛心捐款", text: "學校發起小額捐款，幫助受災家庭。", effect: -50, kind: "支出", note: "在能力範圍內助人，是有意義的金錢運用。" },
+      { title: "幫鄰居整理回收", text: "你用下課後時間幫忙分類回收。", effect: 80, kind: "收入", note: "收入可以來自努力，也能結合環保行動。" },
     ];
+
+    const flowTasks = {
+      pay: {
+        title: "多元支付流程挑戰",
+        image: "assets/payment-flow.png",
+        text: "你用電子票證到便利商店買牛奶。請把付款流程排成正確順序。",
+        steps: ["先將現金加值到電子票證", "確認加值成功", "到商店選好商品", "感應電子票證完成扣款"],
+        reward: 80,
+      },
+      rights: {
+        title: "問題商品怎麼處理",
+        image: "assets/consumer-rights.png",
+        text: "剛買的商品壞掉了。請排出處理流程，看看能不能找到客服人員協助。",
+        steps: ["保留商品和統一發票", "回到店家說明問題", "請店家退貨或更換", "仍無法處理時尋求消費者保護協助"],
+        reward: 70,
+      },
+    };
+
+    const labelTask = {
+      title: "商品標示小偵探",
+      image: "assets/smart-labels.png",
+      text: "購物前先看商品資訊。哪些做法最像聰明消費？",
+      options: [
+        { label: "先看有效日期、成分、產地、製造商和安全標章", effect: 60, kind: "收入", note: "你會閱讀標示，能降低買到問題商品的風險。" },
+        { label: "只看包裝漂亮和價格便宜就決定", effect: -40, kind: "支出", note: "便宜和漂亮不一定安全，購物前要先看標示。" },
+      ],
+    };
 
     const quickQuestions = [
       { q: "鞋子破到會進水，買新鞋比較像？", answer: "需要", reward: 50, why: "少了會影響健康與生活。" },
@@ -343,16 +395,16 @@
       { q: "同樣是書包，該比較價格、品質和能不能負擔，這叫做？", answer: "評估", reward: 50, why: "需要也要做消費前評估。" },
     ];
 
-    function makePlayers() {
-      return goals.map((g, i) => ({
+    function makePlayers(count = 6) {
+      return purchaseItems.slice(0, count).map((g, i) => ({
         id: i,
         name: names[i],
         animal: animals[i],
         color: colors[i],
-        goal: g[0],
-        target: g[1],
-        daily: g[2],
-        cash: 300,
+        goal: g.item,
+        target: g.price,
+        daily: g.daily,
+        cash: 0,
         saved: 0,
         position: 0,
         active: true,
@@ -363,15 +415,15 @@
     function money(n) { return `${n < 0 ? "-" : ""}$${Math.abs(n)}`; }
     function clamp(n, min, max) { return Math.max(min, Math.min(max, n)); }
     function financialPosition(player) {
-      return player.cash + player.saved - 300;
+      return player.cash + player.saved;
     }
 
-    function Dice({ value, rolling }) {
+    function Dice({ value, rolling, big = false }) {
       const pips = {
         1: [4], 2: [0, 8], 3: [0, 4, 8], 4: [0, 2, 6, 8], 5: [0, 2, 4, 6, 8], 6: [0, 2, 3, 5, 6, 8],
       };
       return <div className="dice-wrap">
-        <div className={`dice3d ${rolling ? "rolling" : ""}`} aria-label={`骰子 ${value} 點`}>
+        <div className={`dice3d ${rolling ? "rolling" : ""} ${big ? "big-result" : ""}`} aria-label={`骰子 ${value} 點`}>
           {[1,2,3,4,5,6].map(n => <div key={n} className={`face f${n}`}>
             {Array.from({length: 9}).map((_, i) => <span key={i} className={`pip ${pips[n].includes(i) ? "on" : ""}`}></span>)}
           </div>)}
@@ -379,13 +431,44 @@
       </div>;
     }
 
+    function FlowTask({ task, onDone }) {
+      const [items, setItems] = useState(() => [...task.steps].sort(() => Math.random() - .5));
+      const [dragIndex, setDragIndex] = useState(null);
+      const correct = items.every((item, i) => item === task.steps[i]);
+      function move(from, to) {
+        const next = [...items];
+        const [picked] = next.splice(from, 1);
+        next.splice(to, 0, picked);
+        setItems(next);
+      }
+      return <div>
+        <img src={task.image} className="task-image" alt="" />
+        <p className="mt-2 text-lg leading-8 text-slate-700">{task.text}</p>
+        <div className="mt-4 grid gap-2">
+          {items.map((item, i) => <div
+            key={item}
+            draggable
+            onDragStart={() => setDragIndex(i)}
+            onDragOver={e => e.preventDefault()}
+            onDrop={() => dragIndex !== null && move(dragIndex, i)}
+            className="sortable-item rounded-2xl border-2 border-slate-200 bg-slate-50 p-3 font-black"
+          >{i + 1}. {item}</div>)}
+        </div>
+        <button onClick={() => onDone(correct)} className="mt-5 w-full rounded-2xl bg-[#067ca3] px-4 py-4 text-xl font-black text-white">確認排序</button>
+      </div>;
+    }
+
     function App() {
       const [players, setPlayers] = useState(makePlayers);
+      const [playerCount, setPlayerCount] = useState(6);
       const [current, setCurrent] = useState(0);
       const [day, setDay] = useState(1);
       const [turnsThisDay, setTurnsThisDay] = useState(0);
       const [dice, setDice] = useState(1);
       const [rolling, setRolling] = useState(false);
+      const [diceBig, setDiceBig] = useState(false);
+      const [pendingMove, setPendingMove] = useState(null);
+      const [movingPlayerId, setMovingPlayerId] = useState(null);
       const [message, setMessage] = useState("請先看右側儲蓄計畫，再按下骰子開始第一天。");
       const [modal, setModal] = useState(null);
       const [drawing, setDrawing] = useState(null);
@@ -408,6 +491,7 @@
       const activePlayers = players.filter(p => p.active);
       const player = players[current];
       const coords = isMobile ? coordsMobile : coordsWide;
+      const pendingTile = pendingMove ? tiles[pendingMove.tileIndex] : null;
 
       function unlockAudio() {
         if (audioReady.current) return;
@@ -536,8 +620,23 @@
       }
       function applyCard(option) {
         const latest = addEvent(player.id, { title: modal.card.title, effect: option.effect, kind: option.kind || modal.card.kind, note: option.note || modal.card.note });
-        setMessage(`${player.name}：${option.note || modal.card.note}（${money(option.effect)}）`);
+        setMessage(`${player.name}：${option.note || modal.card.note}，揭曉金額 ${money(option.effect)}。`);
         setModal(null);
+        setPendingMove(null);
+        finishTurn(latest);
+      }
+      function finishFlowTask(correct) {
+        const task = modal.task;
+        const effect = correct ? task.reward : -30;
+        const latest = addEvent(player.id, {
+          title: task.title,
+          effect,
+          kind: effect >= 0 ? "收入" : "支出",
+          note: correct ? "流程排序正確，成功完成任務。" : "流程還需要再調整，先記錄一次學習成本。",
+        });
+        setMessage(`${player.name} 完成「${task.title}」，${correct ? "完全答對" : "還要再練習"}，揭曉金額 ${money(effect)}。`);
+        setModal(null);
+        setPendingMove(null);
         finishTurn(latest);
       }
       function answerQuestion(ans) {
@@ -551,20 +650,36 @@
           setMessage(`先沒關係，我們一起修正：${q.why}`);
         }
         setModal(null);
+        setPendingMove(null);
         finishTurn(latest);
       }
       function handleTile(tile, passedStart) {
         let latest = playersRef.current;
         if (passedStart || tile.type === "start") {
-          latest = addEvent(player.id, { title: "經過起點領零用錢", effect: 100, kind: "收入", note: "零用錢進到手上現金，還不是已存金額。" });
+          latest = addEvent(player.id, { title: "經過起點領零用錢", effect: 50, kind: "收入", note: "零用錢進到手上現金，還不是已存金額。" });
         }
         if (tile.type === "start") {
-          setMessage(`${player.name} 來到起點，收入 ${money(100)}。一天結束時才會依每日計畫存錢。`);
+          setMessage(`${player.name} 來到起點，揭曉收入 ${money(50)}。一天結束時才會依每日計畫存錢。`);
+          setPendingMove(null);
           finishTurn(latest);
           return;
         }
-        if (tile.type === "chance") return draw("chance", true);
-        if (tile.type === "fate") return draw("fate", true);
+        if (tile.type === "chance") {
+          setMessage(`${player.name} 停在機會格，請點右側「機會」牌堆抽牌。`);
+          return;
+        }
+        if (tile.type === "fate") {
+          setMessage(`${player.name} 停在命運格，請點右側「命運」牌堆抽牌。`);
+          return;
+        }
+        if (tile.type === "pay" || tile.type === "rights") {
+          setModal({ type: "flow", task: flowTasks[tile.type] });
+          return;
+        }
+        if (tile.type === "label") {
+          setModal({ type: "choice", kind: "label", card: labelTask });
+          return;
+        }
         if (tile.type === "rest") {
           const q = quickQuestions[Math.floor(Math.random() * quickQuestions.length)];
           setModal({ type: "question", question: q });
@@ -585,40 +700,74 @@
           });
           return;
         }
-        const kind = tile.effect >= 0 ? "收入" : "支出";
         const note = tile.type === "need" ? "生活中的需要支出。" : tile.type === "eco" ? "環保行動讓花費變少。" : tile.type === "work" ? "努力完成日常工作得到收入。" : tile.sub;
-        latest = addEvent(player.id, { title: tile.title, effect: tile.effect, kind, note });
-        setMessage(`${player.name} 來到「${tile.title}」，${kind} ${money(tile.effect)}。`);
-        finishTurn(latest);
+        setModal({
+          type: "choice",
+          kind: "daily",
+          card: {
+            title: tile.title,
+            text: `你停在「${tile.title}」。請讀完情境後做選擇，選完才揭曉金額。`,
+            options: [
+              { label: tile.type === "need" ? "這是生活需要，我願意負責處理" : "我願意完成這個日常任務", effect: tile.effect, kind: tile.effect >= 0 ? "收入" : "支出", note },
+              { label: "我想先和同學討論，再做決定", effect: 0, kind: "反思", note: "先停下來討論，是做選擇前的重要練習。" },
+            ],
+          },
+        });
       }
       function roll() {
-        if (modal || rolling || !player.active) return;
+        if (modal || rolling || pendingMove || !player.active) return;
         unlockAudio();
         rollSound();
         setRolling(true);
         const value = Math.ceil(Math.random() * 6);
         setTimeout(() => {
           setDice(value);
-          const movedPlayers = playersRef.current.map(p => {
-            if (p.id !== player.id) return p;
-            return { ...p, position: (p.position + value) % tiles.length };
-          });
-          setPlayersNow(movedPlayers);
-          const nextPos = (player.position + value) % tiles.length;
-          const passed = player.position + value >= tiles.length;
-          setMessage(`${player.name} 擲出 ${value} 點，走到「${tiles[nextPos].title}」。`);
           setRolling(false);
-          setTimeout(() => handleTile(tiles[nextPos], passed), 180);
+          setDiceBig(true);
+          setMessage(`${player.name} 擲出 ${value} 點，請看清楚點數，等一下角色會一格一格移動。`);
+          setTimeout(() => {
+            setDiceBig(false);
+            moveTokenStepByStep(value);
+          }, 2000);
         }, 980);
       }
+      function moveTokenStepByStep(value) {
+        const start = playersRef.current[current].position;
+        const passed = start + value >= tiles.length;
+        setMovingPlayerId(player.id);
+        let step = 0;
+        const timer = setInterval(() => {
+          step += 1;
+          const nextPos = (start + step) % tiles.length;
+          setPlayersNow(playersRef.current.map(p => p.id === player.id ? { ...p, position: nextPos } : p));
+          if (step >= value) {
+            clearInterval(timer);
+            setMovingPlayerId(null);
+            const finalPos = (start + value) % tiles.length;
+            setPendingMove({ playerId: player.id, tileIndex: finalPos, passedStart: passed });
+            setMessage(`${player.name} 停在「${tiles[finalPos].title}」。請學生點擊這一格，打開放大的任務卡。`);
+          }
+        }, 360);
+      }
       function resetGame() {
-        setPlayersNow(makePlayers());
+        setPlayersNow(makePlayers(playerCount));
         setCurrent(0);
         setDay(1);
         setTurnsThisDay(0);
         setDice(1);
         setMessage("請先看右側儲蓄計畫，再按下骰子開始第一天。");
         setModal(null);
+        setPendingMove(null);
+      }
+      function changePlayerCount(count) {
+        setPlayerCount(count);
+        setPlayersNow(makePlayers(count));
+        setCurrent(0);
+        setDay(1);
+        setTurnsThisDay(0);
+        setPendingMove(null);
+        setModal(null);
+        setMessage(`已設定 ${count} 位玩家，請先選擇儲蓄目標，再開始擲骰。`);
       }
       const allOut = players.every(p => !p.active || p.cash < 0);
 
@@ -632,6 +781,11 @@
                 <p className="mt-1 font-bold text-slate-600">設計者：新北市網溪國小 Kiki 老師設計</p>
               </div>
               <div className="flex flex-wrap gap-2 lg:pb-1">
+                <label className="rounded-2xl bg-amber-100 px-3 py-2 font-black text-amber-900">玩家
+                  <select value={playerCount} onChange={e => changePlayerCount(Number(e.target.value))} className="ml-2 rounded-xl border border-amber-200 bg-white px-2 py-1">
+                    {[2,3,4,5,6].map(n => <option key={n} value={n}>{n}人</option>)}
+                  </select>
+                </label>
                 <button onClick={toggleMusic} className="rounded-2xl bg-[#067ca3] px-4 py-2 font-black text-white shadow-[0_5px_0_rgba(23,50,77,.22)]">{musicOn ? "關閉音樂" : "播放音樂"}</button>
                 <button onClick={resetGame} className="rounded-2xl bg-slate-800 px-4 py-2 font-black text-white shadow-[0_5px_0_rgba(23,50,77,.22)]">重新開始</button>
               </div>
@@ -644,23 +798,24 @@
                 {tiles.map((t, i) => {
                   const [x, y] = coords[i];
                   const here = players.filter(p => p.position === i && p.active);
-                  return <div key={i} className={`tile ${player.position === i ? "active" : ""}`} style={{ left: `${x}%`, top: `${y}%` }}>
+                  const canOpenTask = pendingMove && pendingMove.tileIndex === i && pendingMove.playerId === player.id;
+                  return <button key={i} onClick={() => canOpenTask && handleTile(t, pendingMove.passedStart)} className={`tile ${player.position === i ? "active" : ""}`} style={{ left: `${x}%`, top: `${y}%` }} aria-label={`${t.title} ${t.sub}`}>
                     <div>
                       <div className="tile-title">{t.title}</div>
                       <div className="tile-sub">{t.sub}</div>
                     </div>
-                    <div className="tokens">{here.map(p => <span key={p.id} className="animal small" style={{ color: p.color }}>{p.animal}</span>)}</div>
-                  </div>;
+                    <div className="tokens">{here.map(p => <span key={p.id} className={`animal small ${movingPlayerId === p.id ? "moving" : ""}`} style={{ color: p.color }}>{p.animal}</span>)}</div>
+                  </button>;
                 })}
                 <div className="mission">
                   <h2 className="text-xl font-black md:text-3xl">第 {day} 天任務</h2>
                   <p className="mt-2 text-sm font-bold leading-6 md:text-base">{message}</p>
                   <p className="mt-3 text-xs font-black text-slate-500 md:text-sm">輪到：<span style={{ color: player.color }}>{player.animal} {player.name}</span> ｜ 已行動 {turnsThisDay}/{activePlayers.length}</p>
                 </div>
-                <button onClick={() => draw("chance")} className={`card-zone chance ${drawing === "chance" ? "drawing" : ""}`} aria-label="抽機會卡">
+                <button disabled={!pendingMove || pendingTile?.type !== "chance"} onClick={() => draw("chance")} className={`card-zone chance ${drawing === "chance" ? "drawing" : ""}`} aria-label="抽機會卡">
                   <div className="stack-card bg-[#e85b4f]"><span className="label">機會</span></div><div className="stack-card bg-[#e85b4f]"><span className="label">機會</span></div><div className="stack-card bg-[#e85b4f]"><span className="label">機會</span></div>
                 </button>
-                <button onClick={() => draw("fate")} className={`card-zone fate ${drawing === "fate" ? "drawing" : ""}`} aria-label="抽命運卡">
+                <button disabled={!pendingMove || pendingTile?.type !== "fate"} onClick={() => draw("fate")} className={`card-zone fate ${drawing === "fate" ? "drawing" : ""}`} aria-label="抽命運卡">
                   <div className="stack-card bg-[#8379f2]"><span className="label">命運</span></div><div className="stack-card bg-[#8379f2]"><span className="label">命運</span></div><div className="stack-card bg-[#8379f2]"><span className="label">命運</span></div>
                 </button>
               </div>
@@ -673,17 +828,17 @@
                     <h2 className="text-xl font-black">擲骰區</h2>
                     <p className="text-sm font-bold text-slate-500">立體骰子會跳起來轉動</p>
                   </div>
-                  <Dice value={dice} rolling={rolling} />
+                  <Dice value={dice} rolling={rolling} big={diceBig} />
                 </div>
                 <button disabled={!!modal || rolling || allOut} onClick={roll} className="mt-3 w-full rounded-2xl bg-[#e85b4f] px-5 py-3 text-xl font-black text-white shadow-[0_8px_0_rgba(23,50,77,.22)] disabled:bg-slate-300">擲骰子</button>
               </div>
 
               <div className="soft-card rounded-[24px] bg-white p-3">
-                <h2 className="text-xl font-black">六位玩家儲蓄計畫</h2>
+                <h2 className="text-xl font-black">{playerCount} 位玩家儲蓄計畫</h2>
                 <div className="mt-2 grid grid-cols-1 gap-2 sm:grid-cols-2 xl:grid-cols-3">
                   {players.map(p => {
                     const progressValue = financialPosition(p);
-                    const pos = clamp(((progressValue + 1000) / 2000) * 100, 0, 100);
+                    const pos = clamp(((progressValue + 300) / 600) * 100, 0, 100);
                     return <div key={p.id} className={`rounded-2xl border-2 p-2 ${p.id === current ? "border-amber-400 bg-amber-50" : "border-slate-100 bg-slate-50"} ${(!p.active || p.cash < 0) ? "opacity-55 grayscale" : ""}`}>
                       <div className="flex items-center justify-between">
                         <span className="animal" style={{ color: p.color }}>{p.animal}</span>
@@ -691,12 +846,17 @@
                       </div>
                       <div className="mt-1 text-xs font-black text-slate-500">現金 {money(p.cash)} ｜ 狀態 {money(progressValue)}</div>
                       <input value={p.name} onChange={e => setPlayersNow(playersRef.current.map(x => x.id === p.id ? {...x, name: e.target.value} : x))} className="mt-1 w-full rounded-xl border border-slate-200 bg-white px-2 py-1 font-black" />
-                      <input value={p.goal} onChange={e => setPlayersNow(playersRef.current.map(x => x.id === p.id ? {...x, goal: e.target.value} : x))} className="mt-1 w-full rounded-xl border border-slate-200 bg-white px-2 py-1 text-sm" />
+                      <select value={p.goal} onChange={e => {
+                        const selected = purchaseItems.find(item => item.item === e.target.value);
+                        setPlayersNow(playersRef.current.map(x => x.id === p.id ? {...x, goal: selected.item, target: selected.price, daily: selected.daily} : x));
+                      }} className="mt-1 w-full rounded-xl border border-slate-200 bg-white px-2 py-1 text-sm font-bold">
+                        {purchaseItems.map(item => <option key={item.item} value={item.item}>{item.item}</option>)}
+                      </select>
                       <div className="mt-1 grid grid-cols-2 gap-2 text-xs font-bold">
                         <label>目標<input type="number" value={p.target} onChange={e => setPlayersNow(playersRef.current.map(x => x.id === p.id ? {...x, target: Number(e.target.value)} : x))} className="mt-1 w-full rounded-lg border px-2 py-1" /></label>
                         <label>每日存<input type="number" value={p.daily} onChange={e => setPlayersNow(playersRef.current.map(x => x.id === p.id ? {...x, daily: Number(e.target.value)} : x))} className="mt-1 w-full rounded-lg border px-2 py-1" /></label>
                       </div>
-                      <div className="mt-2 flex justify-between text-[10px] font-black text-slate-500"><span>-1000</span><span>0</span><span>1000</span></div>
+                      <div className="mt-2 flex justify-between text-[10px] font-black text-slate-500"><span>-300</span><span>0</span><span>300</span></div>
                       <div className="progress-track"><span className="zero-line"></span><span className="progress-dot" style={{ left: `${pos}%`, background: p.color }}></span></div>
                     </div>;
                   })}
@@ -722,10 +882,11 @@
             {modal.type === "choice" && <>
               <span className={`inline-flex rounded-full px-4 py-1 text-sm font-black text-white ${modal.kind === "chance" ? "bg-[#e85b4f]" : "bg-[#8379f2]"}`}>{modal.kind === "chance" ? "機會卡" : "選擇題"}</span>
               <h2 className="mt-3 text-3xl font-black">{modal.card.title}</h2>
+              {modal.card.image && <img src={modal.card.image} className="task-image" alt="" />}
               <p className="mt-3 text-lg leading-8 text-slate-700">{modal.card.text}</p>
               <div className="mt-5 grid gap-3">
                 {modal.card.options.map((op, i) => <button key={i} onClick={() => applyCard(op)} className="rounded-2xl border-2 border-slate-200 bg-slate-50 p-4 text-left font-black hover:border-amber-400 hover:bg-amber-50">
-                  {op.label}<span className="ml-2 text-sm text-slate-500">({money(op.effect)})</span>
+                  {op.label}
                 </button>)}
               </div>
             </>}
@@ -734,7 +895,12 @@
               <h2 className="mt-3 text-3xl font-black">{modal.card.title}</h2>
               <p className="mt-3 text-lg leading-8 text-slate-700">{modal.card.text}</p>
               <p className="mt-3 rounded-2xl bg-violet-50 p-4 font-bold">{modal.card.note}</p>
-              <button onClick={() => applyCard(modal.card)} className="mt-5 w-full rounded-2xl bg-[#8379f2] px-4 py-4 text-xl font-black text-white">記錄這件事 {money(modal.card.effect)}</button>
+              <button onClick={() => applyCard(modal.card)} className="mt-5 w-full rounded-2xl bg-[#8379f2] px-4 py-4 text-xl font-black text-white">記錄這件事，揭曉金額</button>
+            </>}
+            {modal.type === "flow" && <>
+              <span className="inline-flex rounded-full bg-[#067ca3] px-4 py-1 text-sm font-black text-white">流程排序任務</span>
+              <h2 className="mt-3 text-3xl font-black">{modal.task.title}</h2>
+              <FlowTask task={modal.task} onDone={finishFlowTask} />
             </>}
             {modal.type === "question" && <>
               <span className="inline-flex rounded-full bg-[#067ca3] px-4 py-1 text-sm font-black text-white">需要 / 想要 / 評估</span>
@@ -746,7 +912,7 @@
             {modal.type === "settle" && <>
               <span className="inline-flex rounded-full bg-amber-500 px-4 py-1 text-sm font-black text-white">一天過去</span>
               <h2 className="mt-3 text-3xl font-black">第 {day} 天結算</h2>
-              <p className="mt-2 font-bold text-slate-600">玩家 1～6 今天做了哪些事？收入支出先影響手上現金；一天結束後，才依每日計畫存入目標帳戶。</p>
+              <p className="mt-2 font-bold text-slate-600">今天每位玩家做了哪些事？收入支出先影響手上現金；一天結束後，才依每日計畫存入目標帳戶。</p>
               <div className="mt-4 grid gap-3">
                 {modal.snapshot.map(p => {
                   const income = p.dayLog.filter(x => x.kind === "收入").reduce((s, x) => s + x.effect, 0);
