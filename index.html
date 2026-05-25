@@ -99,14 +99,16 @@
     }
     .card-zone {
       position: absolute;
-      right: 1.2%;
-      width: 14.5%;
-      height: 17%;
+      right: 5.8%;
+      width: 11.5%;
       perspective: 900px;
       cursor: pointer;
+      background: transparent;
+      border: 0;
+      padding: 0;
     }
-    .card-zone.chance { top: 39%; }
-    .card-zone.fate { top: 61%; }
+    .card-zone.chance { top: 12.5%; height: 26.7%; }
+    .card-zone.fate { top: 44.7%; height: 27.5%; }
     .stack-card {
       position: absolute;
       inset: 0;
@@ -799,10 +801,10 @@
                   <p className="mt-3 text-xs font-black text-slate-500 md:text-sm">輪到：<span style={{ color: player.color }}>{player.animal} {player.name}</span> ｜ 已行動 {turnsThisDay}/{activePlayers.length}</p>
                 </div>
                 <button disabled={!pendingMove || pendingTile?.type !== "chance"} onClick={() => draw("chance")} className={`card-zone chance ${drawing === "chance" ? "drawing" : ""}`} aria-label="抽機會卡">
-                  <div className="stack-card bg-[#e85b4f]"><span className="label">機會</span></div><div className="stack-card bg-[#e85b4f]"><span className="label">機會</span></div><div className="stack-card bg-[#e85b4f]"><span className="label">機會</span></div>
+                  <div className="stack-card bg-[#a980d8]"><span className="label">機會</span></div><div className="stack-card bg-[#a980d8]"><span className="label">機會</span></div><div className="stack-card bg-[#a980d8]"><span className="label">機會</span></div>
                 </button>
                 <button disabled={!pendingMove || pendingTile?.type !== "fate"} onClick={() => draw("fate")} className={`card-zone fate ${drawing === "fate" ? "drawing" : ""}`} aria-label="抽命運卡">
-                  <div className="stack-card bg-[#8379f2]"><span className="label">命運</span></div><div className="stack-card bg-[#8379f2]"><span className="label">命運</span></div><div className="stack-card bg-[#8379f2]"><span className="label">命運</span></div>
+                  <div className="stack-card bg-[#5cb9b0]"><span className="label">命運</span></div><div className="stack-card bg-[#5cb9b0]"><span className="label">命運</span></div><div className="stack-card bg-[#5cb9b0]"><span className="label">命運</span></div>
                 </button>
               </div>
             </div>
@@ -866,7 +868,7 @@
         {modal && <div className="modal-backdrop fixed inset-0 z-50 grid place-items-center p-4">
           <div className="flip-in max-h-[92vh] w-full max-w-3xl overflow-auto rounded-[30px] bg-white p-5 shadow-2xl">
             {modal.type === "choice" && <>
-              <span className={`inline-flex rounded-full px-4 py-1 text-sm font-black text-white ${modal.kind === "chance" ? "bg-[#e85b4f]" : "bg-[#8379f2]"}`}>{modal.kind === "chance" ? "機會卡" : "選擇題"}</span>
+              <span className={`inline-flex rounded-full px-4 py-1 text-sm font-black text-white ${modal.kind === "chance" ? "bg-[#a980d8]" : "bg-[#067ca3]"}`}>{modal.kind === "chance" ? "機會卡" : "選擇題"}</span>
               <h2 className="mt-3 text-3xl font-black">{modal.card.title}</h2>
               {modal.card.image && <img src={modal.card.image} className="task-image" alt="" />}
               <p className="mt-3 text-lg leading-8 text-slate-700">{modal.card.text}</p>
@@ -877,11 +879,11 @@
               </div>
             </>}
             {modal.type === "event" && <>
-              <span className="inline-flex rounded-full bg-[#8379f2] px-4 py-1 text-sm font-black text-white">命運卡</span>
+              <span className="inline-flex rounded-full bg-[#5cb9b0] px-4 py-1 text-sm font-black text-white">命運卡</span>
               <h2 className="mt-3 text-3xl font-black">{modal.card.title}</h2>
               <p className="mt-3 text-lg leading-8 text-slate-700">{modal.card.text}</p>
-              <p className="mt-3 rounded-2xl bg-violet-50 p-4 font-bold">{modal.card.note}</p>
-              <button onClick={() => applyCard(modal.card)} className="mt-5 w-full rounded-2xl bg-[#8379f2] px-4 py-4 text-xl font-black text-white">記錄這件事，揭曉金額</button>
+              <p className="mt-3 rounded-2xl bg-teal-50 p-4 font-bold">{modal.card.note}</p>
+              <button onClick={() => applyCard(modal.card)} className="mt-5 w-full rounded-2xl bg-[#5cb9b0] px-4 py-4 text-xl font-black text-white">記錄這件事，揭曉金額</button>
             </>}
             {modal.type === "flow" && <>
               <span className="inline-flex rounded-full bg-[#067ca3] px-4 py-1 text-sm font-black text-white">流程排序任務</span>
