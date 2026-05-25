@@ -258,6 +258,38 @@
 <body>
   <div id="root"></div>
   <audio id="bgm" src="assets/flowerbed_fields.ogg" loop preload="auto"></audio>
+  <script type="module">
+    import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.5/firebase-app.js";
+    import { getFirestore, doc, getDoc, setDoc, serverTimestamp } from "https://www.gstatic.com/firebasejs/10.12.5/firebase-firestore.js";
+
+    const firebaseConfig = {
+      apiKey: "AIzaSyBZ666oMN5NeEG6jicsHG2OJPkZSBnLu2w",
+      authDomain: "grade3-saving-monopoly.firebaseapp.com",
+      projectId: "grade3-saving-monopoly",
+      storageBucket: "grade3-saving-monopoly.firebasestorage.app",
+      messagingSenderId: "595491190598",
+      appId: "1:595491190598:web:21684baff1f25fb5b49747"
+    };
+
+    const app = initializeApp(firebaseConfig);
+    const db = getFirestore(app);
+    window.firebaseGame = {
+      async saveGame(roomCode, state) {
+        const safeRoomCode = (roomCode || "classroom").trim() || "classroom";
+        await setDoc(doc(db, "gameStates", safeRoomCode), {
+          ...state,
+          roomCode: safeRoomCode,
+          updatedAt: serverTimestamp()
+        });
+      },
+      async loadGame(roomCode) {
+        const safeRoomCode = (roomCode || "classroom").trim() || "classroom";
+        const snap = await getDoc(doc(db, "gameStates", safeRoomCode));
+        return snap.exists() ? snap.data() : null;
+      }
+    };
+    window.dispatchEvent(new Event("firebase-ready"));
+  </script>
 
   <script type="text/babel">
     const { useEffect, useMemo, useRef, useState } = React;
@@ -462,6 +494,9 @@
       const [drawing, setDrawing] = useState(null);
       const [musicOn, setMusicOn] = useState(false);
       const [isMobile, setIsMobile] = useState(false);
+      const [roomCode, setRoomCode] = useState("classroom");
+      const [cloudStatus, setCloudStatus] = useState("Firebase 連線中...");
+      const [firebaseReady, setFirebaseReady] = useState(Boolean(window.firebaseGame));
       const audioReady = useRef(false);
       const playersRef = useRef(players);
 
@@ -474,6 +509,26 @@
         onResize();
         window.addEventListener("resize", onResize);
         return () => window.removeEventListener("resize", onResize);
+      }, []);
+
+      useEffect(() => {
+        if (window.firebaseGame) {
+          setFirebaseReady(true);
+          setCloudStatus("Firebase 已連線，可雲端儲存。");
+          return;
+        }
+        const onReady = () => {
+          setFirebaseReady(true);
+          setCloudStatus("Firebase 已連線，可雲端儲存。");
+        };
+        window.addEventListener("firebase-ready", onReady);
+        const timer = setTimeout(() => {
+          if (!window.firebaseGame) setCloudStatus("Firebase 尚未連線；請確認網路與 Firestore 是否已啟用。");
+        }, 5000);
+        return () => {
+          window.removeEventListener("firebase-ready", onReady);
+          clearTimeout(timer);
+        };
       }, []);
 
       const activePlayers = players.filter(p => p.active);
@@ -757,6 +812,60 @@
         setModal(null);
         setMessage(`已設定 ${count} 位玩家，請先選擇儲蓄目標，再開始擲骰。`);
       }
+      function currentGameState() {
+        return {
+          version: 1,
+          playerCount,
+          players: playersRef.current,
+          current,
+          day,
+          turnsThisDay,
+          dice,
+          message,
+        };
+      }
+      async function saveToCloud() {
+        if (!window.firebaseGame) {
+          setCloudStatus("Firebase 還沒連線，請稍後再試。");
+          return;
+        }
+        setCloudStatus("正在儲存到雲端...");
+        try {
+          await window.firebaseGame.saveGame(roomCode, currentGameState());
+          setCloudStatus(`已儲存到雲端：${roomCode || "classroom"}`);
+        } catch (error) {
+          setCloudStatus(`雲端儲存失敗：${error.code || error.message}`);
+        }
+      }
+      async function loadFromCloud() {
+        if (!window.firebaseGame) {
+          setCloudStatus("Firebase 還沒連線，請稍後再試。");
+          return;
+        }
+        setCloudStatus("正在讀取雲端存檔...");
+        try {
+          const state = await window.firebaseGame.loadGame(roomCode);
+          if (!state) {
+            setCloudStatus(`找不到雲端存檔：${roomCode || "classroom"}`);
+            return;
+          }
+          setPlayerCount(state.playerCount || state.players?.length || 6);
+          setPlayersNow(state.players || makePlayers(state.playerCount || 6));
+          setCurrent(state.current || 0);
+          setDay(state.day || 1);
+          setTurnsThisDay(state.turnsThisDay || 0);
+          setDice(state.dice || 1);
+          setMessage(state.message || "已讀取雲端存檔，請繼續遊戲。");
+          setModal(null);
+          setPendingMove(null);
+          setMovingPlayerId(null);
+          setRolling(false);
+          setDiceBig(false);
+          setCloudStatus(`已讀取雲端存檔：${roomCode || "classroom"}`);
+        } catch (error) {
+          setCloudStatus(`雲端讀取失敗：${error.code || error.message}`);
+        }
+      }
       const allOut = players.every(p => !p.active || p.cash < 0);
 
       return <main className="app-shell px-3 py-4 sm:px-5">
@@ -774,10 +883,16 @@
                     {[2,3,4,5,6].map(n => <option key={n} value={n}>{n}人</option>)}
                   </select>
                 </label>
+                <label className="rounded-2xl bg-emerald-100 px-3 py-2 font-black text-emerald-900">教室
+                  <input value={roomCode} onChange={e => setRoomCode(e.target.value)} className="ml-2 w-28 rounded-xl border border-emerald-200 bg-white px-2 py-1" />
+                </label>
+                <button disabled={!firebaseReady} onClick={saveToCloud} className="rounded-2xl bg-emerald-600 px-4 py-2 font-black text-white shadow-[0_5px_0_rgba(23,50,77,.22)] disabled:bg-slate-300">雲端儲存</button>
+                <button disabled={!firebaseReady} onClick={loadFromCloud} className="rounded-2xl bg-teal-700 px-4 py-2 font-black text-white shadow-[0_5px_0_rgba(23,50,77,.22)] disabled:bg-slate-300">讀取雲端</button>
                 <button onClick={toggleMusic} className="rounded-2xl bg-[#067ca3] px-4 py-2 font-black text-white shadow-[0_5px_0_rgba(23,50,77,.22)]">{musicOn ? "關閉音樂" : "播放音樂"}</button>
                 <button onClick={resetGame} className="rounded-2xl bg-slate-800 px-4 py-2 font-black text-white shadow-[0_5px_0_rgba(23,50,77,.22)]">重新開始</button>
               </div>
             </div>
+            <p className="mt-2 text-xs font-bold text-slate-500">{cloudStatus}</p>
           </header>
 
           <section className="grid gap-3 xl:grid-cols-[1fr_500px]">
