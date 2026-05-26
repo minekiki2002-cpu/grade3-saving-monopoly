@@ -1276,12 +1276,20 @@
         } catch (e) { console.error(e); }
       }
 
+      const [actionError, setActionError] = useState("");
+      function reportError(e) {
+        const msg = e && (e.message || e.code) ? (e.code ? `${e.code}: ${e.message || ""}` : e.message) : String(e);
+        console.error(e);
+        setActionError(msg);
+        setTimeout(() => setActionError(""), 5000);
+      }
       async function applyChoice(option) {
         try {
-          await window.firebaseGame.tx(code, (data) => ({
-            game: applyCardChoice(data.game, option),
-          }));
-        } catch (e) { console.error(e); }
+          await window.firebaseGame.tx(code, (data) => {
+            if (!data.game.sharedModal) return null;
+            return { game: applyCardChoice(data.game, option) };
+          });
+        } catch (e) { reportError(e); }
       }
       async function applyEvent() {
         if (!g.sharedModal || !g.sharedModal.card) return;
@@ -1289,24 +1297,36 @@
       }
       async function finishFlow(correct) {
         try {
-          await window.firebaseGame.tx(code, (data) => ({
-            game: applyFlowResult(data.game, correct),
-          }));
-        } catch (e) { console.error(e); }
+          await window.firebaseGame.tx(code, (data) => {
+            if (!data.game.sharedModal || data.game.sharedModal.type !== "flow") return null;
+            return { game: applyFlowResult(data.game, correct) };
+          });
+        } catch (e) { reportError(e); }
       }
       async function answerQuestion(ans) {
         try {
-          await window.firebaseGame.tx(code, (data) => ({
-            game: applyQuestionAnswer(data.game, ans),
-          }));
-        } catch (e) { console.error(e); }
+          await window.firebaseGame.tx(code, (data) => {
+            if (!data.game.sharedModal || data.game.sharedModal.type !== "question") return null;
+            return { game: applyQuestionAnswer(data.game, ans) };
+          });
+        } catch (e) { reportError(e); }
       }
       async function continueDay() {
         try {
+          await window.firebaseGame.tx(code, (data) => {
+            if (!data.game.sharedModal || data.game.sharedModal.type !== "settle") return null;
+            return { game: startNextDay(data.game) };
+          });
+        } catch (e) { reportError(e); }
+      }
+      async function forcePassTurn() {
+        if (!isHost) return;
+        if (!window.confirm("確定要強制跳過目前這位玩家、換下一位？")) return;
+        try {
           await window.firebaseGame.tx(code, (data) => ({
-            game: startNextDay(data.game),
+            game: advanceTurn({ ...data.game, pendingMove: null, sharedModal: null, rolling: false }),
           }));
-        } catch (e) { console.error(e); }
+        } catch (e) { reportError(e); }
       }
       async function resetToLobby() {
         if (!isHost) return;
@@ -1425,12 +1445,19 @@
           </div>
 
           {g.sharedModal && (
-            <SharedModal modal={g.sharedModal} g={g} isMyTurn={isMyTurn} currentPlayer={currentPlayer}
+            <SharedModal modal={g.sharedModal} g={g} isMyTurn={isMyTurn} isHost={isHost} currentPlayer={currentPlayer}
                          onApplyChoice={applyChoice}
                          onApplyEvent={applyEvent}
                          onFinishFlow={finishFlow}
                          onAnswerQuestion={answerQuestion}
-                         onContinue={continueDay} />
+                         onContinue={continueDay}
+                         onForcePass={forcePassTurn} />
+          )}
+
+          {actionError && (
+            <div className="fixed bottom-4 left-1/2 z-[60] -translate-x-1/2 rounded-2xl bg-rose-600 px-5 py-3 text-sm font-black text-white shadow-2xl">
+              ⚠️ 操作失敗：{actionError}
+            </div>
           )}
         </div>
       </main>;
@@ -1510,14 +1537,21 @@
       </div>;
     }
 
-    function SharedModal({ modal, g, isMyTurn, currentPlayer, onApplyChoice, onApplyEvent, onFinishFlow, onAnswerQuestion, onContinue }) {
-      const interactive = isMyTurn;
+    function SharedModal({ modal, g, isMyTurn, isHost, currentPlayer, onApplyChoice, onApplyEvent, onFinishFlow, onAnswerQuestion, onContinue, onForcePass }) {
+      // Active player can always interact; the host can interact too (for solo testing / rescuing stuck students)
+      const interactive = isMyTurn || isHost;
+      const asHostOverride = !isMyTurn && isHost;
       return <div className="modal-backdrop fixed inset-0 z-50 grid place-items-center p-4">
         <div className="flip-in max-h-[92vh] w-full max-w-3xl overflow-auto rounded-[30px] bg-white p-5 shadow-2xl">
-          {!isMyTurn && modal.type !== "settle" && (
+          {isMyTurn && modal.type !== "settle" && modal.type !== "gameover" && (
+            <p className="mb-3 flex items-center justify-center gap-2 rounded-2xl bg-gradient-to-r from-amber-300 to-rose-300 p-2 text-center text-base font-black text-white shadow-md">
+              ✨ 你的回合，請做選擇 ✨
+            </p>
+          )}
+          {!isMyTurn && modal.type !== "settle" && modal.type !== "gameover" && (
             <p className="mb-3 flex items-center justify-center gap-2 rounded-2xl bg-amber-100 p-2 text-center text-sm font-black text-amber-800">
               <AnimalAvatar animal={currentPlayer.animal} color={currentPlayer.color} size="sm" />
-              ⏳ {currentPlayer.name} 正在做選擇...
+              ⏳ {currentPlayer.name} 正在做選擇{asHostOverride ? "（你是房主，可以代為操作）" : "..."}
             </p>
           )}
           {modal.type === "choice" && (
@@ -1614,6 +1648,14 @@
               <h2 className="mt-3 text-3xl font-black">所有玩家都出局了</h2>
               <p className="mt-2 font-bold text-slate-600">如果想再來一次，請房主按「重置」回到等待室。</p>
             </>
+          )}
+          {isHost && modal.type !== "settle" && modal.type !== "gameover" && (
+            <div className="mt-4 border-t border-slate-200 pt-3 text-center">
+              <button onClick={onForcePass}
+                      className="rounded-xl bg-slate-200 px-4 py-1.5 text-xs font-black text-slate-600 hover:bg-rose-200 hover:text-rose-700">
+                🛟 房主：強制跳過此玩家
+              </button>
+            </div>
           )}
         </div>
       </div>;
