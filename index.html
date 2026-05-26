@@ -172,19 +172,34 @@
       100% { transform: translate(-210px,-30px) rotateY(180deg) scale(1.08); }
     }
     .dice2d {
-      width: 78px;
-      height: 78px;
+      width: 88px;
+      height: 88px;
       display: inline-grid;
       grid-template-columns: repeat(3, 1fr);
       grid-template-rows: repeat(3, 1fr);
-      padding: 10px;
+      padding: 12px;
       background: linear-gradient(145deg, #fff, #f1f5fc);
       border: 3px solid #17324d;
-      border-radius: 18px;
+      border-radius: 20px;
       box-shadow: 0 6px 0 rgba(23,50,77,.18), inset -4px -4px 0 rgba(23,50,77,.06);
       flex: 0 0 auto;
+      cursor: default;
+      transition: transform .15s ease, box-shadow .15s ease;
     }
-    .dice2d.rolling { animation: diceShake .8s ease; }
+    .dice2d.clickable {
+      cursor: pointer;
+      border-color: #e85b4f;
+      box-shadow: 0 8px 0 rgba(232,91,79,.32), 0 0 0 4px rgba(232,91,79,.18);
+      animation: dicePulse 1.6s ease-in-out infinite;
+    }
+    .dice2d.clickable:hover { transform: translateY(-3px) scale(1.04); }
+    .dice2d.clickable:active { transform: translateY(3px) scale(0.97); box-shadow: 0 2px 0 rgba(232,91,79,.32); }
+    .dice2d:disabled { opacity: 1; }
+    @keyframes dicePulse {
+      0%, 100% { box-shadow: 0 8px 0 rgba(232,91,79,.32), 0 0 0 4px rgba(232,91,79,.18); }
+      50%      { box-shadow: 0 8px 0 rgba(232,91,79,.32), 0 0 0 10px rgba(232,91,79,.10); }
+    }
+    .dice2d.rolling { animation: diceShake .8s ease; cursor: default; }
     @keyframes diceShake {
       0%   { transform: rotate(0deg) scale(1); }
       15%  { transform: rotate(-22deg) scale(1.12); }
@@ -760,16 +775,19 @@
       return player.cash + player.saved;
     }
 
-    function Dice({ value, rolling }) {
+    function Dice({ value, rolling, onClick }) {
       const pips = {
         1: [4], 2: [0, 8], 3: [0, 4, 8], 4: [0, 2, 6, 8], 5: [0, 2, 4, 6, 8], 6: [0, 2, 3, 5, 6, 8],
       };
       const safe = pips[value] || pips[1];
-      return <div className={`dice2d ${rolling ? "rolling" : ""}`} aria-label={`骰子 ${value} 點`}>
+      const clickable = !!onClick;
+      return <button type="button" disabled={!clickable} onClick={onClick}
+                     className={`dice2d ${rolling ? "rolling" : ""} ${clickable ? "clickable" : ""}`}
+                     aria-label={`骰子 ${value} 點${clickable ? "（點我擲骰）" : ""}`}>
         {Array.from({length: 9}).map((_, i) => (
           <span key={i} className={`pip ${safe.includes(i) ? "on" : ""}`}></span>
         ))}
-      </div>;
+      </button>;
     }
 
     function FlowTask({ task, onDone }) {
@@ -1325,36 +1343,28 @@
 
           <div className="grid gap-3 xl:grid-cols-[1fr_360px]">
             <div className="rounded-3xl border-[3px] border-white bg-white/85 p-3 shadow-lg">
-              {/* Dice + roll bar */}
-              <div className="mb-2 flex flex-wrap items-center gap-4 rounded-2xl bg-gradient-to-r from-rose-50 via-amber-50 to-sky-50 p-3 md:gap-6 md:p-4">
-                <div className="flex flex-col items-center gap-1">
-                  <Dice value={g.dice} rolling={g.rolling} />
-                  <p className="text-[10px] font-black text-slate-500">骰子</p>
-                </div>
-                <div className="grid min-w-[88px] place-items-center rounded-2xl border-2 border-rose-200 bg-white px-3 py-2 shadow-inner">
-                  <p className="text-[10px] font-black text-slate-500">點數</p>
-                  <p className="text-5xl font-black leading-none text-rose-500 tabular-nums">{g.dice}</p>
-                </div>
-                <div className="min-w-0 flex-1 px-1 text-center">
-                  <p className="text-sm font-black leading-tight text-slate-700">{g.message}</p>
-                </div>
-                {isMyTurn && !g.rolling && !g.pendingMove && !g.sharedModal && !allOut && (
-                  <button onClick={rollDice}
-                          className="rounded-2xl bg-gradient-to-r from-rose-400 to-pink-500 px-6 py-3 text-lg font-black text-white shadow-[0_8px_0_rgba(244,63,94,.32)] active:translate-y-1 active:shadow-[0_2px_0_rgba(244,63,94,.32)]">
-                    🎲 擲骰子
-                  </button>
-                )}
-                {!isMyTurn && !g.rolling && !g.pendingMove && !g.sharedModal && !allOut && (
-                  <div className="rounded-2xl bg-slate-100 px-5 py-3 text-sm font-black text-slate-500">
-                    等 {currentPlayer.name} 擲骰
+              {/* Dice + status bar */}
+              {(() => {
+                const canRoll = isMyTurn && !g.rolling && !g.pendingMove && !g.sharedModal && !allOut;
+                return <div className="mb-2 flex flex-wrap items-center gap-4 rounded-2xl bg-gradient-to-r from-rose-50 via-amber-50 to-sky-50 p-3 md:gap-6 md:p-4">
+                  <div className="flex flex-col items-center gap-1">
+                    <Dice value={g.dice} rolling={g.rolling} onClick={canRoll ? rollDice : null} />
+                    <p className="text-[10px] font-black text-slate-500">
+                      {canRoll ? "👆 點我擲骰" : g.rolling ? "擲骰中..." : "骰子"}
+                    </p>
                   </div>
-                )}
-                {g.rolling && (
-                  <div className="rounded-2xl bg-amber-100 px-5 py-3 text-sm font-black text-amber-700 animate-pulse">
-                    🎲 擲骰中...
+                  <div className="grid min-w-[88px] place-items-center rounded-2xl border-2 border-rose-200 bg-white px-3 py-2 shadow-inner">
+                    <p className="text-[10px] font-black text-slate-500">點數</p>
+                    <p className="text-5xl font-black leading-none text-rose-500 tabular-nums">{g.dice}</p>
                   </div>
-                )}
-              </div>
+                  <div className="min-w-0 flex-1 px-1 text-center">
+                    <p className="text-sm font-black leading-tight text-slate-700">{g.message}</p>
+                    {!isMyTurn && !g.rolling && !g.pendingMove && !g.sharedModal && !allOut && (
+                      <p className="mt-1 text-xs font-black text-slate-500">⏳ 等 {currentPlayer.name} 擲骰</p>
+                    )}
+                  </div>
+                </div>;
+              })()}
 
               <div className="game-board">
                 {tiles.map((t, i) => {
