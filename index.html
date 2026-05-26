@@ -171,57 +171,39 @@
       55% { transform: translate(-180px,-70px) rotateY(95deg) scale(1.05); }
       100% { transform: translate(-210px,-30px) rotateY(180deg) scale(1.08); }
     }
-    .dice-wrap { perspective: 800px; }
-    .dice3d {
-      position: relative;
-      width: 72px;
-      height: 72px;
-      transform-style: preserve-3d;
-      transform: rotateX(-20deg) rotateY(25deg);
-      transition: transform .35s ease;
-    }
-    .dice3d.rolling { animation: diceJump 1s cubic-bezier(.2,.9,.25,1.2); }
-    .dice3d.big-result {
-      position: fixed;
-      right: 10vw;
-      top: 18vh;
-      z-index: 70;
-      transform: scale(2.4) rotateX(-20deg) rotateY(25deg);
-    }
-    @keyframes diceJump {
-      0% { transform: translateY(0) rotateX(0) rotateY(0) rotateZ(0); }
-      35% { transform: translateY(-60px) rotateX(260deg) rotateY(210deg) rotateZ(70deg); }
-      70% { transform: translateY(8px) rotateX(540deg) rotateY(470deg) rotateZ(140deg); }
-      100% { transform: translateY(0) rotateX(700deg) rotateY(610deg) rotateZ(180deg); }
-    }
-    .face {
-      position: absolute;
-      inset: 0;
-      display: grid;
+    .dice2d {
+      width: 78px;
+      height: 78px;
+      display: inline-grid;
       grid-template-columns: repeat(3, 1fr);
       grid-template-rows: repeat(3, 1fr);
       padding: 10px;
-      background: linear-gradient(145deg, #fff, #e7f2ff);
+      background: linear-gradient(145deg, #fff, #f1f5fc);
       border: 3px solid #17324d;
-      border-radius: 16px;
-      box-shadow: inset -4px -4px 0 rgba(23,50,77,.08);
+      border-radius: 18px;
+      box-shadow: 0 6px 0 rgba(23,50,77,.18), inset -4px -4px 0 rgba(23,50,77,.06);
+      flex: 0 0 auto;
     }
-    .f1 { transform: rotateY(0deg) translateZ(36px); }
-    .f2 { transform: rotateY(90deg) translateZ(36px); }
-    .f3 { transform: rotateX(90deg) translateZ(36px); }
-    .f4 { transform: rotateX(-90deg) translateZ(36px); }
-    .f5 { transform: rotateY(-90deg) translateZ(36px); }
-    .f6 { transform: rotateY(180deg) translateZ(36px); }
-    .pip {
-      width: 11px;
-      height: 11px;
+    .dice2d.rolling { animation: diceShake .8s ease; }
+    @keyframes diceShake {
+      0%   { transform: rotate(0deg) scale(1); }
+      15%  { transform: rotate(-22deg) scale(1.12); }
+      30%  { transform: rotate(20deg) scale(1.05); }
+      45%  { transform: rotate(-18deg) scale(1.1); }
+      60%  { transform: rotate(14deg) scale(1.05); }
+      80%  { transform: rotate(-8deg) scale(1.04); }
+      100% { transform: rotate(0deg) scale(1); }
+    }
+    .dice2d .pip {
+      width: 12px;
+      height: 12px;
       border-radius: 50%;
       align-self: center;
       justify-self: center;
       background: #17324d;
       opacity: 0;
     }
-    .pip.on { opacity: 1; }
+    .dice2d .pip.on { opacity: 1; }
     .progress-track {
       position: relative;
       height: 16px;
@@ -778,16 +760,15 @@
       return player.cash + player.saved;
     }
 
-    function Dice({ value, rolling, big = false }) {
+    function Dice({ value, rolling }) {
       const pips = {
         1: [4], 2: [0, 8], 3: [0, 4, 8], 4: [0, 2, 6, 8], 5: [0, 2, 4, 6, 8], 6: [0, 2, 3, 5, 6, 8],
       };
-      return <div className="dice-wrap">
-        <div className={`dice3d ${rolling ? "rolling" : ""} ${big ? "big-result" : ""}`} aria-label={`骰子 ${value} 點`}>
-          {[1,2,3,4,5,6].map(n => <div key={n} className={`face f${n}`}>
-            {Array.from({length: 9}).map((_, i) => <span key={i} className={`pip ${pips[n].includes(i) ? "on" : ""}`}></span>)}
-          </div>)}
-        </div>
+      const safe = pips[value] || pips[1];
+      return <div className={`dice2d ${rolling ? "rolling" : ""}`} aria-label={`骰子 ${value} 點`}>
+        {Array.from({length: 9}).map((_, i) => (
+          <span key={i} className={`pip ${safe.includes(i) ? "on" : ""}`}></span>
+        ))}
       </div>;
     }
 
@@ -1144,11 +1125,10 @@
       const claimedPlayers = g.players.filter(p => p.claimed);
       const activeClaimed = g.players.filter(p => p.claimed && p.active && p.cash >= 0);
 
-      const [diceBig, setDiceBig] = useState(false);
       const [musicOn, setMusicOn] = useState(false);
       const [notesValue, setNotesValue] = useState("");
       const audioReady = useRef(false);
-      const prevRolling = useRef(g.rolling);
+      const autoOpenedFor = useRef(null);
 
       // Load private notes
       useEffect(() => {
@@ -1161,16 +1141,6 @@
         setNotesValue(v);
         if (mySeat >= 0) localStorage.setItem(`monopoly:${code}:notes:${mySeat}`, v);
       }
-
-      // Trigger big-dice flash whenever rolling transitions from true to false
-      useEffect(() => {
-        if (prevRolling.current && !g.rolling) {
-          setDiceBig(true);
-          const t = setTimeout(() => setDiceBig(false), 1600);
-          return () => clearTimeout(t);
-        }
-        prevRolling.current = g.rolling;
-      }, [g.rolling]);
 
       // Audio
       function unlockAudio() {
@@ -1213,33 +1183,31 @@
         unlockAudio(); rollSound();
         const value = Math.ceil(Math.random() * 6);
         try {
+          // ONE atomic transaction: roll + move + clear rolling flag once written
           await window.firebaseGame.tx(code, (data) => {
             const ga = data.game;
             if (ga.rolling || ga.pendingMove || ga.sharedModal) return null;
+            const cur = ga.current;
+            const startPos = ga.players[cur].position;
+            const passed = startPos + value >= tiles.length;
+            const finalPos = (startPos + value) % tiles.length;
+            const players = [...ga.players];
+            players[cur] = { ...players[cur], position: finalPos };
             return {
               "game.rolling": true,
               "game.dice": value,
-              "game.message": `${ga.players[ga.current].name} 正在擲骰...`,
+              "game.players": players,
+              "game.pendingMove": { playerId: cur, tileIndex: finalPos, passedStart: passed },
+              "game.message": `${players[cur].name} 擲出 ${value} 點，走到「${tiles[finalPos].title}」。`,
             };
           });
+          // Clear rolling flag after a short local-only delay for dice shake animation
           setTimeout(async () => {
             await window.firebaseGame.tx(code, (data) => {
-              const ga = data.game;
-              if (!ga.rolling) return null;
-              const cur = ga.current;
-              const startPos = ga.players[cur].position;
-              const passed = startPos + value >= tiles.length;
-              const finalPos = (startPos + value) % tiles.length;
-              const players = [...ga.players];
-              players[cur] = { ...players[cur], position: finalPos };
-              return {
-                "game.rolling": false,
-                "game.players": players,
-                "game.pendingMove": { playerId: cur, tileIndex: finalPos, passedStart: passed },
-                "game.message": `${players[cur].name} 走到「${tiles[finalPos].title}」，點格子開啟任務。`,
-              };
+              if (!data.game.rolling) return null;
+              return { "game.rolling": false };
             });
-          }, 1100);
+          }, 700);
         } catch (e) { console.error(e); }
       }
 
@@ -1255,6 +1223,22 @@
           });
         } catch (e) { console.error(e); }
       }
+
+      // Auto-open the tile task after the dice settles (so player doesn't need an extra click)
+      useEffect(() => {
+        if (!isMyTurn) return;
+        if (g.rolling) return;
+        if (!g.pendingMove) { autoOpenedFor.current = null; return; }
+        if (g.sharedModal) return;
+        const key = `${g.day}-${g.pendingMove.tileIndex}-${g.pendingMove.playerId}`;
+        if (autoOpenedFor.current === key) return;
+        const tileType = tiles[g.pendingMove.tileIndex].type;
+        // Chance / Fate tiles need the user to click the card stack, don't auto-open
+        if (tileType === "chance" || tileType === "fate") return;
+        autoOpenedFor.current = key;
+        const t = setTimeout(() => { openTileTask(g.pendingMove.tileIndex); }, 450);
+        return () => clearTimeout(t);
+      }, [g.rolling, g.pendingMove, g.sharedModal, g.day, isMyTurn]);
 
       async function drawCard(kind) {
         if (!isMyTurn || !g.pendingMove) return;
@@ -1342,16 +1326,17 @@
           <div className="grid gap-3 xl:grid-cols-[1fr_360px]">
             <div className="rounded-3xl border-[3px] border-white bg-white/85 p-3 shadow-lg">
               {/* Dice + roll bar */}
-              <div className="mb-2 flex flex-wrap items-center justify-between gap-3 rounded-2xl bg-gradient-to-r from-rose-50 via-amber-50 to-sky-50 p-3">
-                <div className="flex items-center gap-3">
-                  <Dice value={g.dice} rolling={g.rolling} big={diceBig} />
-                  <div>
-                    <p className="text-xs font-black text-slate-500">骰子點數</p>
-                    <p className="text-3xl font-black text-rose-500">{g.dice}</p>
-                  </div>
+              <div className="mb-2 flex flex-wrap items-center gap-4 rounded-2xl bg-gradient-to-r from-rose-50 via-amber-50 to-sky-50 p-3 md:gap-6 md:p-4">
+                <div className="flex flex-col items-center gap-1">
+                  <Dice value={g.dice} rolling={g.rolling} />
+                  <p className="text-[10px] font-black text-slate-500">骰子</p>
                 </div>
-                <div className="flex-1 min-w-[180px] px-2 text-center">
-                  <p className="text-sm font-black text-slate-700">{g.message}</p>
+                <div className="grid min-w-[88px] place-items-center rounded-2xl border-2 border-rose-200 bg-white px-3 py-2 shadow-inner">
+                  <p className="text-[10px] font-black text-slate-500">點數</p>
+                  <p className="text-5xl font-black leading-none text-rose-500 tabular-nums">{g.dice}</p>
+                </div>
+                <div className="min-w-0 flex-1 px-1 text-center">
+                  <p className="text-sm font-black leading-tight text-slate-700">{g.message}</p>
                 </div>
                 {isMyTurn && !g.rolling && !g.pendingMove && !g.sharedModal && !allOut && (
                   <button onClick={rollDice}
@@ -1362,6 +1347,11 @@
                 {!isMyTurn && !g.rolling && !g.pendingMove && !g.sharedModal && !allOut && (
                   <div className="rounded-2xl bg-slate-100 px-5 py-3 text-sm font-black text-slate-500">
                     等 {currentPlayer.name} 擲骰
+                  </div>
+                )}
+                {g.rolling && (
+                  <div className="rounded-2xl bg-amber-100 px-5 py-3 text-sm font-black text-amber-700 animate-pulse">
+                    🎲 擲骰中...
                   </div>
                 )}
               </div>
