@@ -288,6 +288,240 @@
     @media (hover: none) {
       .dice2d.clickable:hover { transform: none; }
     }
+
+    /* ====== Cinematic Home ====== */
+    .home-shell {
+      position: relative;
+      min-height: 100vh;
+      overflow: hidden;
+      background:
+        radial-gradient(ellipse at 20% 10%, #ffe4e6 0%, transparent 55%),
+        radial-gradient(ellipse at 80% 20%, #fef3c7 0%, transparent 55%),
+        radial-gradient(ellipse at 60% 90%, #dbeafe 0%, transparent 55%),
+        linear-gradient(135deg, #fff7f9 0%, #fff8ed 45%, #f1faff 100%);
+    }
+    /* Liquid morphing blobs */
+    .blob {
+      position: absolute;
+      border-radius: 42% 58% 60% 40% / 50% 35% 65% 50%;
+      filter: blur(40px);
+      opacity: 0.55;
+      will-change: transform, border-radius;
+    }
+    .blob-pink   { width: 60vmax; height: 60vmax; left: -22vmax; top: -22vmax;
+                   background: linear-gradient(135deg, #fbcfe8, #fda4af);
+                   animation: morphA 14s ease-in-out infinite; }
+    .blob-amber  { width: 55vmax; height: 55vmax; right: -20vmax; top: -10vmax;
+                   background: linear-gradient(135deg, #fde68a, #fdba74);
+                   animation: morphB 18s ease-in-out infinite; }
+    .blob-blue   { width: 60vmax; height: 60vmax; right: -10vmax; bottom: -28vmax;
+                   background: linear-gradient(135deg, #bae6fd, #c4b5fd);
+                   animation: morphC 16s ease-in-out infinite; }
+    .blob-mint   { width: 38vmax; height: 38vmax; left: 10vw; bottom: -15vmax;
+                   background: linear-gradient(135deg, #a7f3d0, #fbcfe8);
+                   animation: morphD 12s ease-in-out infinite; opacity: .45; }
+    @keyframes morphA {
+      0%,100% { transform: translate(0,0) rotate(0deg) scale(1);
+                border-radius: 42% 58% 60% 40% / 50% 35% 65% 50%; }
+      50%     { transform: translate(4vw, 2vh) rotate(40deg) scale(1.12);
+                border-radius: 60% 40% 40% 60% / 35% 60% 40% 65%; }
+    }
+    @keyframes morphB {
+      0%,100% { transform: translate(0,0) rotate(0deg) scale(1);
+                border-radius: 60% 40% 50% 50% / 55% 45% 55% 45%; }
+      50%     { transform: translate(-3vw, 3vh) rotate(-30deg) scale(1.1);
+                border-radius: 40% 60% 65% 35% / 45% 55% 45% 55%; }
+    }
+    @keyframes morphC {
+      0%,100% { transform: translate(0,0) rotate(0deg) scale(1);
+                border-radius: 50% 50% 30% 70% / 60% 40% 50% 50%; }
+      50%     { transform: translate(2vw, -4vh) rotate(25deg) scale(1.15);
+                border-radius: 30% 70% 60% 40% / 45% 55% 40% 60%; }
+    }
+    @keyframes morphD {
+      0%,100% { transform: translate(0,0) scale(1) rotate(0); }
+      50%     { transform: translate(-2vw, 2vh) scale(1.08) rotate(20deg); }
+    }
+    /* Decorative floaters */
+    .deco {
+      position: absolute;
+      pointer-events: none;
+      filter: drop-shadow(0 6px 8px rgba(120,80,80,.18));
+      will-change: transform;
+    }
+    .deco-emoji { font-size: 38px; }
+    .deco-emoji.lg { font-size: 56px; }
+    .deco-emoji.sm { font-size: 26px; }
+
+    /* Hero typography & layout */
+    .hero-tag {
+      display: inline-block;
+      padding: 8px 18px;
+      border-radius: 999px;
+      background: rgba(255,255,255,0.7);
+      backdrop-filter: blur(10px);
+      border: 2px solid rgba(244,114,182,0.35);
+      color: #be185d;
+      font-weight: 1000;
+      font-size: 13px;
+      letter-spacing: .15em;
+      text-transform: uppercase;
+      box-shadow: 0 6px 24px rgba(244,114,182,.18);
+    }
+    .hero-title {
+      font-size: clamp(48px, 9vw, 128px);
+      font-weight: 1000;
+      letter-spacing: -.04em;
+      line-height: 0.9;
+      color: #17324d;
+      text-shadow: 0 4px 0 rgba(255,255,255,.7), 0 18px 38px rgba(120,80,80,.18);
+      margin: 18px 0 6px;
+    }
+    .hero-title .accent {
+      background: linear-gradient(135deg, #f43f5e 0%, #f59e0b 60%, #f43f5e 100%);
+      -webkit-background-clip: text;
+      background-clip: text;
+      color: transparent;
+      -webkit-text-fill-color: transparent;
+    }
+    .hero-subtitle {
+      font-size: clamp(16px, 2vw, 26px);
+      color: #475569;
+      font-weight: 900;
+      letter-spacing: .35em;
+      margin-top: 10px;
+      text-transform: uppercase;
+    }
+    .hero-divider {
+      width: 64px; height: 5px;
+      background: linear-gradient(90deg, #f43f5e, #f59e0b);
+      border-radius: 99px;
+      margin: 22px auto 28px;
+    }
+
+    /* Hero CTA buttons */
+    .hero-cta {
+      position: relative;
+      padding: 18px 26px;
+      border-radius: 28px;
+      font-weight: 1000;
+      font-size: 18px;
+      letter-spacing: .04em;
+      color: white;
+      box-shadow: 0 14px 0 rgba(0,0,0,.18);
+      transition: transform .15s ease, box-shadow .15s ease;
+      cursor: pointer;
+      overflow: hidden;
+    }
+    .hero-cta:hover { transform: translateY(-3px); box-shadow: 0 17px 0 rgba(0,0,0,.2); }
+    .hero-cta:active { transform: translateY(6px); box-shadow: 0 4px 0 rgba(0,0,0,.2); }
+    .hero-cta:disabled { opacity: 0.5; cursor: wait; }
+    .hero-cta.primary  { background: linear-gradient(135deg, #f43f5e, #fb7185 60%, #f97316); }
+    .hero-cta.secondary { background: linear-gradient(135deg, #6366f1, #8b5cf6 60%, #ec4899); }
+    .hero-cta-emoji { font-size: 26px; line-height: 1; margin-right: 8px; vertical-align: -2px; }
+
+    /* Character row, glass card backdrop */
+    .char-row {
+      display: flex; justify-content: center; gap: clamp(6px, 1.5vw, 22px);
+      flex-wrap: nowrap;
+      margin: 50px auto 0;
+    }
+    .char-card {
+      width: clamp(78px, 13vw, 140px);
+      aspect-ratio: 1;
+      border-radius: 26px;
+      background: rgba(255,255,255,0.55);
+      backdrop-filter: blur(8px);
+      border: 3px solid rgba(255,255,255,0.85);
+      box-shadow: 0 10px 30px rgba(120,80,80,.10);
+      padding: 8px;
+      display: grid; place-items: center;
+      transition: transform .3s ease, box-shadow .3s ease;
+      will-change: transform;
+    }
+    .char-card:hover { transform: translateY(-8px) scale(1.05); box-shadow: 0 18px 40px rgba(244,114,182,.25); }
+    .char-card img { width: 100%; height: 100%; object-fit: contain; }
+    .char-label {
+      position: absolute; bottom: -22px; left: 50%; transform: translateX(-50%);
+      font-size: 12px; font-weight: 900; color: #475569;
+      background: white; padding: 2px 10px; border-radius: 999px;
+      box-shadow: 0 2px 8px rgba(0,0,0,.08);
+      white-space: nowrap;
+    }
+
+    /* Join card */
+    .join-card {
+      max-width: 480px; margin: 0 auto;
+      background: rgba(255,255,255,0.75);
+      backdrop-filter: blur(20px);
+      border: 3px solid rgba(255,255,255,0.95);
+      border-radius: 36px;
+      padding: 28px;
+      box-shadow: 0 30px 60px rgba(60,80,160,.15);
+    }
+    .join-input {
+      width: 100%;
+      border-radius: 24px;
+      border: 4px solid #bae6fd;
+      background: white;
+      padding: 22px;
+      text-align: center;
+      font-size: clamp(34px, 5vw, 56px);
+      font-weight: 1000;
+      letter-spacing: 0.5em;
+      color: #1e293b;
+      outline: none;
+      transition: border-color .2s, box-shadow .2s;
+    }
+    .join-input:focus { border-color: #38bdf8; box-shadow: 0 0 0 6px rgba(56,189,248,.18); }
+
+    /* Scroll hint */
+    .scroll-hint {
+      position: absolute; left: 50%; bottom: 24px;
+      transform: translateX(-50%);
+      font-size: 14px; font-weight: 900; color: #475569;
+      opacity: 0.7;
+    }
+    .scroll-hint::after {
+      content: "";
+      display: block; width: 2px; height: 26px;
+      margin: 8px auto 0;
+      background: linear-gradient(180deg, #94a3b8, transparent);
+      animation: scrollHintBob 1.4s ease-in-out infinite;
+    }
+    @keyframes scrollHintBob {
+      0%,100% { transform: translateY(0); opacity: .8; }
+      50%     { transform: translateY(6px); opacity: .25; }
+    }
+
+    /* Story sections */
+    .story-section {
+      position: relative; z-index: 2;
+      padding: clamp(60px, 10vh, 120px) 24px;
+    }
+    .story-card {
+      max-width: 1100px; margin: 0 auto;
+      background: rgba(255,255,255,0.72);
+      backdrop-filter: blur(20px);
+      border: 3px solid rgba(255,255,255,0.95);
+      border-radius: 36px;
+      padding: clamp(28px, 5vw, 56px);
+      box-shadow: 0 30px 70px rgba(120,80,80,.10);
+    }
+    .story-heading {
+      font-size: clamp(28px, 4vw, 48px);
+      font-weight: 1000;
+      letter-spacing: -.02em;
+      color: #17324d;
+      line-height: 1.1;
+    }
+    .story-num {
+      display: inline-grid; place-items: center;
+      width: 44px; height: 44px; border-radius: 14px;
+      background: linear-gradient(135deg, #f43f5e, #f59e0b);
+      color: white; font-weight: 1000; font-size: 20px;
+      box-shadow: 0 6px 0 rgba(244,63,94,.25);
+    }
     /* Encourage iPad landscape with a gentle hint when narrow + tall */
     @media (max-width: 900px) and (orientation: portrait) {
       .rotate-hint { display: flex; }
@@ -939,16 +1173,17 @@
       const [busy, setBusy] = useState(false);
       const [err, setErr] = useState("");
 
+      const heroRef = useRef(null);
+      const charsRef = useRef([]);
+      const sectionRefs = useRef([]);
+
       async function onCreate() {
         if (busy) return;
         setBusy(true); setErr("");
         try {
           const code = await window.firebaseGame.createRoom(makeInitialGame());
           navigate(`/room/${code}`);
-        } catch (e) {
-          setErr(e.message || String(e));
-          setBusy(false);
-        }
+        } catch (e) { setErr(e.message || String(e)); setBusy(false); }
       }
       async function onJoin() {
         if (busy) return;
@@ -962,50 +1197,197 @@
         } catch (e) { setErr(e.message || String(e)); setBusy(false); }
       }
 
-      return <main className="min-h-screen bg-gradient-to-br from-rose-100 via-amber-50 to-sky-100">
-        <div className="mx-auto max-w-5xl px-4 py-8 md:px-6 md:py-12">
-          <div className="overflow-hidden rounded-[40px] border-[6px] border-white bg-white/70 shadow-[0_30px_60px_rgba(244,114,182,.20)] backdrop-blur">
-            <div className="relative">
-              <img src="assets/home-hero.png" alt="" className="aspect-[16/9] w-full object-cover"
-                   onError={e => { e.target.style.display = "none"; }} />
-              <div className="absolute inset-0 bg-gradient-to-t from-white via-white/40 to-transparent"></div>
-              <div className="absolute inset-x-0 bottom-0 p-6 text-center md:p-10">
-                <p className="inline-flex rounded-full bg-rose-100/90 px-4 py-1.5 text-sm font-black text-rose-700 shadow-sm">PBL 專題</p>
-                <h1 className="mt-3 text-4xl font-black tracking-tight text-slate-800 drop-shadow-sm md:text-5xl">儲蓄與消費的選擇</h1>
-                <p className="mt-1 text-lg font-bold text-slate-600 md:text-xl">✦ 生活理財大富翁 ✦</p>
+      useEffect(() => {
+        if (!window.gsap) return;
+        const gsap = window.gsap;
+        // Hero staggered entrance
+        const tl = gsap.timeline({ defaults: { ease: "power3.out" } });
+        tl.from(".home-tag", { y: 24, opacity: 0, duration: 0.6 })
+          .from(".home-title", { y: 80, opacity: 0, duration: 1.1, ease: "back.out(1.4)" }, "-=0.3")
+          .from(".home-subtitle", { y: 30, opacity: 0, duration: 0.7 }, "-=0.6")
+          .from(".home-divider", { scaleX: 0, opacity: 0, transformOrigin: "center center", duration: 0.5 }, "-=0.4")
+          .from(".home-cta", { y: 40, opacity: 0, scale: 0.85, duration: 0.6, stagger: 0.12, ease: "back.out(1.7)" }, "-=0.3")
+          .from(".home-credit", { y: 14, opacity: 0, duration: 0.5 }, "-=0.2")
+          .from(charsRef.current, { y: 120, opacity: 0, scale: 0.5, rotation: -25, duration: 1.1, stagger: 0.1, ease: "back.out(1.8)" }, "-=0.9")
+          .from(".home-deco", { scale: 0, opacity: 0, duration: 0.8, stagger: 0.04, ease: "back.out(2)" }, "-=1.3");
+
+        // Continuous idle bob on characters
+        charsRef.current.forEach((el, i) => {
+          if (!el) return;
+          gsap.to(el, { y: -14, duration: 2 + i * 0.25, yoyo: true, repeat: -1, ease: "sine.inOut", delay: i * 0.15 });
+          gsap.to(el, { rotation: 4, duration: 3 + i * 0.2, yoyo: true, repeat: -1, ease: "sine.inOut", delay: i * 0.1 });
+        });
+        // Floaters
+        gsap.utils.toArray(".home-deco").forEach((el, i) => {
+          gsap.to(el, { y: -22 - (i % 3) * 8, duration: 3 + (i % 4), yoyo: true, repeat: -1, ease: "sine.inOut", delay: i * 0.18 });
+          gsap.to(el, { rotation: (i % 2 === 0 ? 12 : -12), duration: 4 + (i % 3), yoyo: true, repeat: -1, ease: "sine.inOut" });
+        });
+        // Mouse parallax
+        const onMove = (e) => {
+          const x = (e.clientX / window.innerWidth - 0.5) * 30;
+          const y = (e.clientY / window.innerHeight - 0.5) * 18;
+          gsap.to(".parallax-back",  { x: x * 0.3, y: y * 0.3, duration: 1.2, overwrite: "auto" });
+          gsap.to(".parallax-mid",   { x: x * 0.6, y: y * 0.6, duration: 0.9, overwrite: "auto" });
+          gsap.to(".parallax-fore",  { x: x * 1.0, y: y * 1.0, duration: 0.6, overwrite: "auto" });
+        };
+        window.addEventListener("mousemove", onMove);
+
+        // Section scroll reveal (manual IntersectionObserver instead of GSAP ScrollTrigger plugin)
+        const observer = new IntersectionObserver(entries => {
+          entries.forEach(e => {
+            if (e.isIntersecting) {
+              gsap.fromTo(e.target,
+                { y: 80, opacity: 0 },
+                { y: 0, opacity: 1, duration: 0.9, ease: "power3.out" });
+              observer.unobserve(e.target);
+            }
+          });
+        }, { threshold: 0.15 });
+        sectionRefs.current.forEach(s => s && observer.observe(s));
+
+        return () => {
+          window.removeEventListener("mousemove", onMove);
+          observer.disconnect();
+          tl.kill();
+        };
+      }, [mode]);
+
+      const decoEmojis = [
+        { e: "💰", cls: "lg", style: { top: "8%",  left: "6%" } },
+        { e: "⭐", cls: "",   style: { top: "14%", right: "8%" } },
+        { e: "🪙", cls: "sm", style: { top: "22%", left: "18%" } },
+        { e: "💵", cls: "",   style: { top: "28%", right: "16%" } },
+        { e: "🎉", cls: "sm", style: { top: "62%", left: "4%" } },
+        { e: "✨", cls: "lg", style: { top: "70%", right: "10%" } },
+        { e: "💎", cls: "sm", style: { top: "12%", left: "44%" } },
+        { e: "🌟", cls: "",   style: { top: "78%", left: "30%" } },
+        { e: "💖", cls: "sm", style: { top: "32%", left: "62%" } },
+        { e: "🧧", cls: "sm", style: { top: "80%", right: "30%" } },
+      ];
+
+      return <main className="home-shell">
+        {/* Atmospheric liquid blobs */}
+        <div className="absolute inset-0 z-0 pointer-events-none">
+          <div className="blob blob-pink"></div>
+          <div className="blob blob-amber"></div>
+          <div className="blob blob-blue"></div>
+          <div className="blob blob-mint"></div>
+        </div>
+
+        {/* Floating emoji decorations with parallax */}
+        <div className="absolute inset-0 z-[1] pointer-events-none parallax-back">
+          {decoEmojis.map((d, i) => (
+            <span key={i} className={`deco home-deco deco-emoji ${d.cls}`} style={d.style}>{d.e}</span>
+          ))}
+        </div>
+
+        {/* Hero section */}
+        <section ref={heroRef} className="relative z-[2] flex min-h-screen flex-col items-center justify-center px-6 py-16 text-center">
+          <p className="home-tag hero-tag">PBL · 我的儲蓄計畫能撐過真實生活嗎</p>
+          <h1 className="home-title hero-title">
+            儲蓄與<span className="accent">消費</span>
+            <br/>的選擇
+          </h1>
+          <div className="home-divider hero-divider"></div>
+          <p className="home-subtitle hero-subtitle">Life Saving Monopoly</p>
+
+          {/* CTA buttons */}
+          {mode === "main" && (
+            <div className="mt-10 flex flex-wrap items-center justify-center gap-4">
+              <button disabled={busy} onClick={onCreate} className="home-cta hero-cta primary">
+                <span className="hero-cta-emoji">🎲</span>建立新遊戲
+              </button>
+              <button disabled={busy} onClick={() => { setMode("join"); setErr(""); }} className="home-cta hero-cta secondary">
+                <span className="hero-cta-emoji">🚪</span>加入遊戲
+              </button>
+            </div>
+          )}
+          {mode === "join" && (
+            <div className="mt-10 join-card">
+              <p className="text-sm font-black tracking-widest text-slate-500">輸入 4 碼房號</p>
+              <input autoFocus value={joinCode}
+                     onChange={e => setJoinCode((e.target.value || "").toUpperCase().replace(/[^A-Z0-9]/g, "").slice(0, 6))}
+                     onKeyDown={e => e.key === "Enter" && onJoin()}
+                     placeholder="ABCD"
+                     className="join-input mt-3" />
+              <div className="mt-4 grid gap-3 md:grid-cols-2">
+                <button onClick={() => { setMode("main"); setJoinCode(""); setErr(""); }}
+                        className="rounded-2xl bg-slate-200 px-5 py-3 font-black text-slate-700 active:translate-y-0.5">取消</button>
+                <button disabled={busy || joinCode.length < 4} onClick={onJoin}
+                        className="rounded-2xl bg-gradient-to-r from-sky-500 to-indigo-500 px-5 py-3 font-black text-white shadow-[0_8px_0_rgba(14,165,233,.32)] active:translate-y-1 active:shadow-[0_2px_0_rgba(14,165,233,.32)] disabled:bg-slate-300 disabled:shadow-none">確認加入</button>
               </div>
             </div>
-            <div className="p-6 md:p-10">
-              {mode === "main" && <div className="grid gap-4 md:grid-cols-2">
-                <button disabled={busy} onClick={onCreate} className="group relative overflow-hidden rounded-3xl bg-gradient-to-br from-rose-400 via-pink-400 to-rose-500 p-8 text-left shadow-[0_12px_0_rgba(244,63,94,.32)] transition active:translate-y-1.5 active:shadow-[0_4px_0_rgba(244,63,94,.32)] disabled:opacity-50">
-                  <div className="text-5xl drop-shadow">🎲</div>
-                  <div className="mt-3 text-2xl font-black text-white drop-shadow-sm">建立新遊戲</div>
-                  <div className="mt-1 text-sm font-bold text-rose-50">當房主、開新一局</div>
-                </button>
-                <button disabled={busy} onClick={() => { setMode("join"); setErr(""); }} className="group relative overflow-hidden rounded-3xl bg-gradient-to-br from-sky-400 via-indigo-400 to-violet-500 p-8 text-left shadow-[0_12px_0_rgba(99,102,241,.32)] transition active:translate-y-1.5 active:shadow-[0_4px_0_rgba(99,102,241,.32)] disabled:opacity-50">
-                  <div className="text-5xl drop-shadow">🚪</div>
-                  <div className="mt-3 text-2xl font-black text-white drop-shadow-sm">加入遊戲</div>
-                  <div className="mt-1 text-sm font-bold text-sky-50">輸入房號跟同學一起玩</div>
-                </button>
-              </div>}
-              {mode === "join" && <div className="space-y-5">
-                <div>
-                  <label className="text-sm font-black text-slate-600">輸入房號（4 碼英數字）</label>
-                  <input autoFocus value={joinCode}
-                         onChange={e => setJoinCode((e.target.value || "").toUpperCase().replace(/[^A-Z0-9]/g, "").slice(0, 6))}
-                         onKeyDown={e => e.key === "Enter" && onJoin()}
-                         placeholder="ABCD"
-                         className="mt-2 w-full rounded-3xl border-4 border-sky-200 bg-white px-6 py-5 text-center text-4xl font-black tracking-[0.5em] text-slate-700 shadow-inner outline-none focus:border-sky-400" />
+          )}
+          {err && <p className="home-cta mt-5 rounded-2xl bg-rose-100/90 px-4 py-3 text-center text-sm font-black text-rose-700 backdrop-blur">{err}</p>}
+
+          {/* Character row in foreground */}
+          <div className="char-row parallax-fore">
+            {ANIMAL_KEYS.map((key, i) => (
+              <div key={key} className="relative">
+                <div ref={el => charsRef.current[i] = el} className="char-card">
+                  <img src={animalImg(key)} alt={names[i]}
+                       onError={e => { e.target.replaceWith(Object.assign(document.createElement('span'), { textContent: ANIMAL_EMOJIS[i], style: 'font-size:54px' })); }} />
                 </div>
-                <div className="grid gap-3 md:grid-cols-2">
-                  <button onClick={() => { setMode("main"); setJoinCode(""); setErr(""); }} className="rounded-2xl bg-slate-200 px-5 py-4 font-black text-slate-700 active:translate-y-0.5">取消</button>
-                  <button disabled={busy || joinCode.length < 4} onClick={onJoin} className="rounded-2xl bg-sky-500 px-5 py-4 font-black text-white shadow-[0_8px_0_rgba(14,165,233,.32)] active:translate-y-1 active:shadow-[0_2px_0_rgba(14,165,233,.32)] disabled:bg-slate-300">確認加入</button>
+                <span className="char-label" style={{ color: colors[i] }}>{names[i]}</span>
+              </div>
+            ))}
+          </div>
+
+          <p className="home-credit mt-16 text-xs font-bold text-slate-400">設計者：新北市網溪國小 Kiki 老師 ｜ 角色與插畫：Gemini Nano Banana Pro</p>
+
+          <div className="scroll-hint">向下滑看玩法</div>
+        </section>
+
+        {/* Story sections */}
+        <section className="story-section">
+          <div ref={el => sectionRefs.current[0] = el} className="story-card grid gap-8 md:grid-cols-2 md:items-center">
+            <div>
+              <div className="story-num">01</div>
+              <h2 className="story-heading mt-4">和同學<span className="accent" style={{ background: "linear-gradient(135deg,#f43f5e,#f59e0b)", WebkitBackgroundClip: "text", color: "transparent", backgroundClip: "text", WebkitTextFillColor: "transparent" }}>連線</span>同玩</h2>
+              <p className="mt-3 text-base font-bold leading-7 text-slate-600">在一台 iPad 上「建立遊戲」、把房號告訴同學，每個人在自己的 iPad 輸入房號就會進到同一場。最多 6 人同行。</p>
+            </div>
+            <div className="grid grid-cols-3 gap-3">
+              {[0,1,2,3,4,5].map(i => (
+                <div key={i} className="aspect-square rounded-2xl border-4 border-white bg-white/80 p-2 shadow-md">
+                  <img src={animalImg(ANIMAL_KEYS[i])} className="h-full w-full object-contain" alt="" />
                 </div>
-              </div>}
-              {err && <p className="mt-5 rounded-2xl bg-rose-50 p-3 text-center text-sm font-black text-rose-700">{err}</p>}
-              <p className="mt-8 text-center text-xs font-bold text-slate-400">設計者：新北市網溪國小 Kiki 老師 ｜ 角色與插畫：Gemini Nano Banana Pro</p>
+              ))}
             </div>
           </div>
+        </section>
+
+        <section className="story-section">
+          <div ref={el => sectionRefs.current[1] = el} className="story-card grid gap-8 md:grid-cols-[2fr_3fr] md:items-center">
+            <div className="order-2 md:order-1 grid grid-cols-2 gap-3">
+              <div className="aspect-[3/4] rounded-2xl border-4 border-white bg-white/80 p-3 shadow-md grid place-items-center">
+                <img src="assets/card-chance-back.png" className="h-full w-full object-contain" alt="" />
+              </div>
+              <div className="aspect-[3/4] rounded-2xl border-4 border-white bg-white/80 p-3 shadow-md grid place-items-center">
+                <img src="assets/card-fate-back.png" className="h-full w-full object-contain" alt="" />
+              </div>
+            </div>
+            <div className="order-1 md:order-2">
+              <div className="story-num">02</div>
+              <h2 className="story-heading mt-4">每天的<span className="accent" style={{ background: "linear-gradient(135deg,#a855f7,#06b6d4)", WebkitBackgroundClip: "text", color: "transparent", backgroundClip: "text", WebkitTextFillColor: "transparent" }}>抉擇</span>會累積</h2>
+              <p className="mt-3 text-base font-bold leading-7 text-slate-600">擲骰、走格子、抽機會與命運卡、面對「想要 vs 需要」、處理意外支出。看你的儲蓄計畫能不能撐到目標達成。</p>
+            </div>
+          </div>
+        </section>
+
+        <section className="story-section">
+          <div ref={el => sectionRefs.current[2] = el} className="story-card text-center">
+            <div className="story-num mx-auto">03</div>
+            <h2 className="story-heading mt-4">準備好<span className="accent" style={{ background: "linear-gradient(135deg,#10b981,#0ea5e9)", WebkitBackgroundClip: "text", color: "transparent", backgroundClip: "text", WebkitTextFillColor: "transparent" }}>開始</span>了嗎</h2>
+            <p className="mt-3 text-base font-bold leading-7 text-slate-600">隨時可以建立或加入。一場約 15–25 分鐘，適合課堂中段或社團時間。</p>
+            <div className="mt-8 flex flex-wrap items-center justify-center gap-4">
+              <button disabled={busy} onClick={onCreate} className="hero-cta primary"><span className="hero-cta-emoji">🎲</span>建立新遊戲</button>
+              <button disabled={busy} onClick={() => { setMode("join"); window.scrollTo({ top: 0, behavior: "smooth" }); setErr(""); }} className="hero-cta secondary"><span className="hero-cta-emoji">🚪</span>加入遊戲</button>
+            </div>
+          </div>
+        </section>
+
+        <div className="story-section text-center text-xs font-bold text-slate-400">
+          ✦ 角色設計：Gemini Nano Banana Pro ｜ 動畫：GSAP ｜ 多人連線：Firebase Firestore ✦
         </div>
       </main>;
     }
