@@ -8,6 +8,7 @@
   <script crossorigin src="https://unpkg.com/react@18/umd/react.development.js"></script>
   <script crossorigin src="https://unpkg.com/react-dom@18/umd/react-dom.development.js"></script>
   <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.5/gsap.min.js"></script>
   <style>
     :root {
       --ink: #17324d;
@@ -82,29 +83,34 @@
       45% { transform: translateY(-18px) scale(1.18); }
       100% { transform: translateY(0) scale(1); }
     }
-    .tokens {
-      position: absolute; left: 50%; top: 58%;
+    /* Absolute-positioned token overlay on the game board. GSAP animates left/top
+       of .token-overlay (board position) and y/scale of .token-jump (hop bounce). */
+    .token-overlay {
+      position: absolute;
       transform: translate(-50%, -50%);
-      display: flex; gap: 1px;
-      flex-wrap: wrap; justify-content: center;
-      width: 96%;
-    }
-    .token-wrap {
-      display: inline-block;
-      transition: transform .3s ease;
-      line-height: 0;
-    }
-    .token-wrap.moving {
-      animation: hopToken .5s ease;
+      pointer-events: none;
       z-index: 30;
+      will-change: left, top;
     }
-    /* When 4+ tokens crowd a tile, overlap inward */
-    .tokens:has(.token-wrap:nth-child(4)) .token-wrap {
-      margin-left: -10px;
+    .token-jump {
+      transform-origin: center;
+      will-change: transform;
+      filter: drop-shadow(0 4px 2px rgba(23,50,77,.25));
     }
-    .tokens:has(.token-wrap:nth-child(4)) .token-wrap:first-child {
-      margin-left: 0;
+    /* Floating money text that drifts upward and fades out */
+    .money-float {
+      position: absolute;
+      pointer-events: none;
+      z-index: 40;
+      font-weight: 1000;
+      font-size: 22px;
+      text-shadow: 0 2px 0 rgba(255,255,255,.9), 0 0 8px rgba(255,255,255,.6);
+      letter-spacing: -.02em;
+      will-change: opacity, transform;
     }
+    .money-float.gain { color: #10b981; }
+    .money-float.loss { color: #e85b4f; }
+    .money-float.save { color: #f59e0b; }
     .mission {
       position: absolute;
       left: 31%;
@@ -1147,6 +1153,115 @@
       const [notesValue, setNotesValue] = useState("");
       const audioReady = useRef(false);
       const autoOpenedFor = useRef(null);
+      const boardRef = useRef(null);
+      const tokenRefs = useRef({});
+      const prevPositionsRef = useRef({});
+      const prevCashRef = useRef({});
+      const diceRef = useRef(null);
+      const prevDiceRollingRef = useRef(false);
+
+      // -------- GSAP: animate token movement along the board path --------
+      useEffect(() => {
+        if (!window.gsap) return;
+        g.players.forEach(p => {
+          if (!p.claimed) return;
+          const el = tokenRefs.current[p.id];
+          if (!el) return;
+          const prev = prevPositionsRef.current[p.id];
+          const curr = p.position;
+          // Tile center anchor: tile is 9% wide, 13.5% tall, so its CENTER is left+4.5%, top+6.75%
+          const tileCenter = idx => {
+            const [tx, ty] = coordsWide[idx];
+            return { left: `${tx + 4.5}%`, top: `${ty + 6.75}%` };
+          };
+          if (prev === undefined) {
+            const c = tileCenter(curr);
+            window.gsap.set(el, c);
+            prevPositionsRef.current[p.id] = curr;
+            return;
+          }
+          if (prev === curr) return;
+          const steps = (curr - prev + tiles.length) % tiles.length;
+          if (steps === 0 || steps > 6) {
+            window.gsap.set(el, tileCenter(curr));
+            prevPositionsRef.current[p.id] = curr;
+            return;
+          }
+          window.gsap.killTweensOf(el);
+          const jump = el.querySelector(".token-jump");
+          const tl = window.gsap.timeline();
+          for (let s = 1; s <= steps; s++) {
+            const idx = (prev + s) % tiles.length;
+            const c = tileCenter(idx);
+            tl.to(el, { left: c.left, top: c.top, duration: 0.26, ease: "power1.inOut" });
+            if (jump) {
+              tl.fromTo(jump, { y: 0, scale: 1 },
+                              { y: -22, scale: 1.18, duration: 0.13, ease: "power2.out" }, "<");
+              tl.to(jump, { y: 0, scale: 1, duration: 0.13, ease: "bounce.out" }, ">");
+            }
+          }
+          // Final landing wiggle
+          if (jump) {
+            tl.fromTo(jump, { rotation: -8 }, { rotation: 0, duration: 0.4, ease: "elastic.out(1, 0.3)" });
+          }
+          prevPositionsRef.current[p.id] = curr;
+        });
+      }, [g.players.map(p => `${p.id}:${p.position}`).join(",")]);
+
+      // -------- GSAP: floating money text on cash change --------
+      useEffect(() => {
+        if (!window.gsap || !boardRef.current) return;
+        g.players.forEach(p => {
+          if (!p.claimed) return;
+          const prev = prevCashRef.current[p.id];
+          if (prev === undefined) {
+            prevCashRef.current[p.id] = p.cash;
+            return;
+          }
+          if (prev === p.cash) return;
+          const delta = p.cash - prev;
+          const tokenEl = tokenRefs.current[p.id];
+          const boardEl = boardRef.current;
+          if (tokenEl && boardEl && Math.abs(delta) > 0) {
+            const float = document.createElement("div");
+            float.className = `money-float ${delta > 0 ? "gain" : "loss"}`;
+            float.textContent = (delta > 0 ? "+$" : "-$") + Math.abs(delta);
+            // Anchor at token's left/top within board
+            const tokenStyle = window.getComputedStyle(tokenEl);
+            float.style.left = tokenStyle.left;
+            float.style.top = tokenStyle.top;
+            float.style.transform = "translate(-50%, -50%)";
+            boardEl.appendChild(float);
+            window.gsap.fromTo(float,
+              { y: 0, opacity: 0, scale: 0.6 },
+              { y: -90, opacity: 1, scale: 1.15, duration: 0.55, ease: "back.out(1.8)",
+                onComplete: () => {
+                  window.gsap.to(float, { opacity: 0, y: -130, duration: 0.6, ease: "power1.in",
+                    onComplete: () => float.remove() });
+                }
+              }
+            );
+          }
+          prevCashRef.current[p.id] = p.cash;
+        });
+      }, [g.players.map(p => `${p.id}:${p.cash}`).join(",")]);
+
+      // -------- GSAP: dice "big reveal" pop when rolling completes --------
+      useEffect(() => {
+        if (!window.gsap || !diceRef.current) return;
+        // Detect transition rolling true → false (i.e. the value just settled)
+        if (prevDiceRollingRef.current && !g.rolling) {
+          window.gsap.fromTo(diceRef.current,
+            { scale: 1, rotation: 0 },
+            { scale: 1.45, rotation: 360, duration: 0.55, ease: "back.out(1.7)",
+              onComplete: () => {
+                window.gsap.to(diceRef.current, { scale: 1, duration: 0.35, ease: "elastic.out(1, 0.4)" });
+              }
+            }
+          );
+        }
+        prevDiceRollingRef.current = g.rolling;
+      }, [g.rolling]);
 
       // Load private notes
       useEffect(() => {
@@ -1368,7 +1483,9 @@
                 const canRoll = isMyTurn && !g.rolling && !g.pendingMove && !g.sharedModal && !allOut;
                 return <div className="mb-2 flex flex-wrap items-center gap-4 rounded-2xl bg-gradient-to-r from-rose-50 via-amber-50 to-sky-50 p-3 md:gap-6 md:p-4">
                   <div className="flex flex-col items-center gap-1">
-                    <Dice value={g.dice} rolling={g.rolling} onClick={canRoll ? rollDice : null} />
+                    <div ref={diceRef} style={{ display: "inline-block" }}>
+                      <Dice value={g.dice} rolling={g.rolling} onClick={canRoll ? rollDice : null} />
+                    </div>
                     <p className="text-[10px] font-black text-slate-500">
                       {canRoll ? "👆 點我擲骰" : g.rolling ? "擲骰中..." : "骰子"}
                     </p>
@@ -1386,10 +1503,9 @@
                 </div>;
               })()}
 
-              <div className="game-board">
+              <div className="game-board" ref={boardRef}>
                 {tiles.map((t, i) => {
                   const [x, y] = coordsWide[i];
-                  const here = g.players.filter(p => p.claimed && p.position === i);
                   const canOpen = isMyTurn && g.pendingMove && g.pendingMove.tileIndex === i && !g.sharedModal;
                   return <button key={i}
                                  onClick={canOpen ? () => openTileTask(i) : undefined}
@@ -1401,15 +1517,30 @@
                       <div className="tile-title">{t.title}</div>
                       <div className="tile-sub">{t.sub}</div>
                     </div>
-                    <div className="tokens">
-                      {here.map((p, idx) => (
-                        <span key={p.id} className={`token-wrap ${g.movingPlayerId === p.id ? "moving" : ""}`}
-                              style={{ "--i": idx, "--n": here.length }}>
-                          <AnimalAvatar animal={p.animal} color={p.color} size="xs" />
-                        </span>
-                      ))}
-                    </div>
                   </button>;
+                })}
+
+                {/* Token overlay: one per claimed player; positioned absolutely on board and animated via GSAP */}
+                {g.players.filter(p => p.claimed).map(p => {
+                  const sameTile = g.players.filter(q => q.claimed && q.position === p.position);
+                  const idx = sameTile.findIndex(q => q.id === p.id);
+                  const total = sameTile.length;
+                  // Small fan offset so multiple tokens on one tile don't overlap
+                  let dx = 0, dy = 0;
+                  if (total > 1) {
+                    const angle = ((idx / total) * Math.PI * 2) - Math.PI / 2;
+                    dx = Math.cos(angle) * 14;
+                    dy = Math.sin(angle) * 10;
+                  }
+                  return (
+                    <div key={p.id}
+                         ref={el => { if (el) tokenRefs.current[p.id] = el; }}
+                         className="token-overlay">
+                      <div className="token-jump" style={{ transform: `translate(${dx}px, ${dy}px)` }}>
+                        <AnimalAvatar animal={p.animal} color={p.color} size="sm" />
+                      </div>
+                    </div>
+                  );
                 })}
 
                 <button disabled={!canDrawChance}
@@ -1541,8 +1672,16 @@
       // Active player can always interact; the host can interact too (for solo testing / rescuing stuck students)
       const interactive = isMyTurn || isHost;
       const asHostOverride = !isMyTurn && isHost;
+      const modalRef = useRef(null);
+      useEffect(() => {
+        if (!window.gsap || !modalRef.current) return;
+        window.gsap.fromTo(modalRef.current,
+          { scale: 0.6, opacity: 0, y: 30, rotation: -3 },
+          { scale: 1, opacity: 1, y: 0, rotation: 0, duration: 0.55, ease: "back.out(1.6)" }
+        );
+      }, [modal.type, (modal.card && modal.card.title) || modal.taskKey || (modal.question && modal.question.q) || modal.type]);
       return <div className="modal-backdrop fixed inset-0 z-50 grid place-items-center p-4">
-        <div className="flip-in max-h-[92vh] w-full max-w-3xl overflow-auto rounded-[30px] bg-white p-5 shadow-2xl">
+        <div ref={modalRef} className="max-h-[92vh] w-full max-w-3xl overflow-auto rounded-[30px] bg-white p-5 shadow-2xl">
           {isMyTurn && modal.type !== "settle" && modal.type !== "gameover" && (
             <p className="mb-3 flex items-center justify-center gap-2 rounded-2xl bg-gradient-to-r from-amber-300 to-rose-300 p-2 text-center text-base font-black text-white shadow-md">
               ✨ 你的回合，請做選擇 ✨
