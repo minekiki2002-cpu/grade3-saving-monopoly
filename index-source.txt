@@ -134,8 +134,7 @@
       background: transparent;
       border: 0;
       padding: 0;
-      overflow: hidden;
-      border-radius: 20px;
+      overflow: visible;
     }
     .card-zone.chance { top: 12.5%; height: 26.7%; }
     .card-zone.fate { top: 44.7%; height: 27.5%; }
@@ -181,30 +180,30 @@
     .card-guide {
       position: absolute;
       left: 50%;
-      top: -38px;
+      bottom: -32px;
       transform: translateX(-50%);
       width: max-content;
-      max-width: 150px;
+      max-width: 180px;
       border-radius: 999px;
-      background: #fff7ed;
+      background: linear-gradient(135deg, #fff7ed, #ffffff);
       border: 3px solid #f59e0b;
       color: #9a3412;
-      padding: 6px 10px;
-      font-size: 12px;
+      padding: 7px 12px;
+      font-size: 13px;
       font-weight: 1000;
-      box-shadow: 0 6px 0 rgba(23,50,77,.16);
+      box-shadow: 0 6px 0 rgba(23,50,77,.16), 0 0 0 4px rgba(255,255,255,.75);
       pointer-events: none;
-      z-index: 3;
+      z-index: 8;
     }
     .card-guide::after {
       content: "";
       position: absolute;
       left: 50%;
-      bottom: -10px;
+      top: -10px;
       transform: translateX(-50%);
       border-left: 8px solid transparent;
       border-right: 8px solid transparent;
-      border-top: 10px solid #f59e0b;
+      border-bottom: 10px solid #f59e0b;
     }
     .deck-back {
       position: absolute;
@@ -215,8 +214,14 @@
       object-fit: cover;
       box-shadow: 0 10px 0 rgba(23,50,77,.16), 0 16px 26px rgba(23,50,77,.18);
     }
+    .deck-frame {
+      position: absolute;
+      inset: 0;
+      overflow: hidden;
+      border-radius: 18px;
+    }
     .deck-back.chance-back {
-      transform: scale(1.34);
+      transform: scale(1.12);
     }
     @keyframes cardPromptPulse {
       0%, 100% { transform: translateY(0) scale(1); }
@@ -2385,19 +2390,21 @@
                         onClick={() => drawCard("chance")}
                         className={`card-zone chance ${g.drawing === "chance" ? "drawing" : ""} ${canDrawChance ? "draw-ready" : ""}`}
                         aria-label="抽機會卡">
-                  {canDrawChance && <span className="card-guide">點這裡翻機會卡</span>}
-                  <img src="assets/card-chance-back.png" alt=""
-                       className="deck-back chance-back" />
-                  {canDrawChance && <span className="absolute -bottom-4 left-1/2 -translate-x-1/2 rounded-full bg-rose-500 px-3 py-1 text-xs font-black text-white shadow-md">翻牌</span>}
+                  {canDrawChance && <span className="card-guide">翻牌-機會卡</span>}
+                  <span className="deck-frame">
+                    <img src="assets/card-chance-back.png" alt=""
+                         className="deck-back chance-back" />
+                  </span>
                 </button>
                 <button disabled={!canDrawFate}
                         onClick={() => drawCard("fate")}
                         className={`card-zone fate ${g.drawing === "fate" ? "drawing" : ""} ${canDrawFate ? "draw-ready" : ""}`}
                         aria-label="抽命運卡">
-                  {canDrawFate && <span className="card-guide">點這裡翻命運卡</span>}
-                  <img src="assets/card-fate-back.png" alt=""
-                       className="deck-back" />
-                  {canDrawFate && <span className="absolute -bottom-4 left-1/2 -translate-x-1/2 rounded-full bg-teal-500 px-3 py-1 text-xs font-black text-white shadow-md">翻牌</span>}
+                  {canDrawFate && <span className="card-guide">翻牌-命運卡</span>}
+                  <span className="deck-frame">
+                    <img src="assets/card-fate-back.png" alt=""
+                         className="deck-back" />
+                  </span>
                 </button>
               </div>
 
