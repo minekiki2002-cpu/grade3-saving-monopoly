@@ -1556,6 +1556,10 @@
 
         {/* Hero section */}
         <section ref={heroRef} className="relative z-[2] flex min-h-screen flex-col items-center justify-center px-6 py-16 text-center">
+          <div className="home-credit absolute top-5 left-1/2 z-[5] w-[min(92vw,720px)] -translate-x-1/2 rounded-full bg-white/70 px-4 py-2 text-center text-xs font-black leading-6 text-slate-500 shadow-sm backdrop-blur md:text-sm">
+            <p>設計者：新北市網溪國小 Kiki 老師</p>
+            <p className="text-[11px] font-bold text-slate-400 md:text-xs">角色與插畫：Gemini Nano Banana Pro</p>
+          </div>
           <p className="home-tag hero-tag">PBL · 我的儲蓄計畫能撐過真實生活嗎</p>
           <h1 className="home-title hero-title">
             儲蓄與<span className="accent">消費</span>
@@ -1605,8 +1609,6 @@
               </div>
             ))}
           </div>
-
-          <p className="home-credit mt-16 text-xs font-bold text-slate-400">設計者：新北市網溪國小 Kiki 老師 ｜ 角色與插畫：Gemini Nano Banana Pro</p>
 
           <div className="scroll-hint">向下滑看玩法</div>
         </section>
