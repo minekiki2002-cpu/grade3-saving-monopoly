@@ -1192,10 +1192,11 @@
       if (order.length === 0) return { ...game, sharedModal: { type: "gameover" } };
       if (turns >= order.length) {
         const settled = buildDaySettlement(game.players);
+        const hasWinner = settled.some(p => p.claimed && p.saved >= p.target && p.target > 0 && p.cash >= 0);
         return {
           ...game, players: settled, turnsThisDay: turns, pendingMove: null,
-          sharedModal: { type: "settle", snapshot: settled.map(p => ({ ...p })) },
-          message: `第 ${game.day} 天結束，請大家看結算。`,
+          sharedModal: hasWinner ? { type: "gameover" } : { type: "settle", snapshot: settled.map(p => ({ ...p })) },
+          message: hasWinner ? "有玩家達成儲蓄目標，遊戲結束。" : `第 ${game.day} 天結束，請大家看結算。`,
         };
       }
       let curIdx = order.indexOf(game.current);
@@ -2096,6 +2097,27 @@
         });
       }, [g.players.map(p => `${p.id}:${p.saved >= p.target}`).join(",")]);
 
+      useEffect(() => {
+        if (!isHost) return;
+        const hasWinner = g.players.some(p => p.claimed && p.saved >= p.target && p.target > 0 && p.cash >= 0);
+        const canShowWinner = !g.sharedModal || g.sharedModal.type === "settle";
+        if (!hasWinner || !canShowWinner) return;
+        window.firebaseGame.tx(code, (data) => {
+          const game = data.game;
+          const winnerStillValid = game.players.some(p => p.claimed && p.saved >= p.target && p.target > 0 && p.cash >= 0);
+          const canStillShow = !game.sharedModal || game.sharedModal.type === "settle";
+          if (!winnerStillValid || !canStillShow) return null;
+          return {
+            game: {
+              ...game,
+              pendingMove: null,
+              rolling: false,
+              sharedModal: { type: "gameover" },
+              message: "有玩家達成儲蓄目標，遊戲結束。",
+            },
+          };
+        }).catch(reportError);
+      }, [isHost, code, g.sharedModal && g.sharedModal.type, g.players.map(p => `${p.id}:${p.saved}:${p.target}:${p.cash}`).join(",")]);
 
       // Load private notes
       useEffect(() => {
