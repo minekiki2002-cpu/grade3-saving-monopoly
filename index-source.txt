@@ -392,6 +392,7 @@
     /* Hero typography & layout */
     .hero-tag {
       display: inline-block;
+      margin-top: 78px;
       padding: 8px 18px;
       border-radius: 999px;
       background: rgba(255,255,255,0.7);
@@ -405,13 +406,16 @@
       box-shadow: 0 6px 24px rgba(244,114,182,.18);
     }
     .hero-title {
-      font-size: clamp(48px, 9vw, 128px);
+      max-width: min(94vw, 1180px);
+      font-family: "可畫軟糖體", "Canva Soft Candy", "jf open 粉圓 2.1", "Zen Maru Gothic", "Noto Sans TC", "Microsoft JhengHei", system-ui, sans-serif;
+      font-size: 76px;
       font-weight: 1000;
-      letter-spacing: -.04em;
-      line-height: 0.9;
+      letter-spacing: 0;
+      line-height: 1.05;
       color: #17324d;
       text-shadow: 0 4px 0 rgba(255,255,255,.7), 0 18px 38px rgba(120,80,80,.18);
-      margin: 18px 0 6px;
+      margin: 18px 0 4px;
+      white-space: nowrap;
     }
     .hero-title .accent {
       background: linear-gradient(135deg, #f43f5e 0%, #f59e0b 60%, #f43f5e 100%);
@@ -432,7 +436,7 @@
       width: 64px; height: 5px;
       background: linear-gradient(90deg, #f43f5e, #f59e0b);
       border-radius: 99px;
-      margin: 22px auto 28px;
+      margin: 14px auto 18px;
     }
 
     /* Hero CTA buttons */
@@ -460,7 +464,7 @@
     .char-row {
       display: flex; justify-content: center; gap: clamp(6px, 1.5vw, 22px);
       flex-wrap: nowrap;
-      margin: 50px auto 0;
+      margin: 42px auto 0;
     }
     .char-card {
       width: clamp(78px, 13vw, 140px);
@@ -513,10 +517,17 @@
 
     /* Scroll hint */
     .scroll-hint {
-      position: absolute; left: 50%; bottom: 24px;
+      position: absolute; left: 50%; bottom: 28px;
       transform: translateX(-50%);
-      font-size: 14px; font-weight: 900; color: #475569;
-      opacity: 0.7;
+      z-index: 4;
+      border-radius: 999px;
+      background: rgba(255,255,255,.72);
+      border: 2px solid rgba(255,255,255,.9);
+      padding: 8px 18px;
+      font-size: 15px; font-weight: 1000; color: #64748b;
+      opacity: 0.95;
+      box-shadow: 0 8px 24px rgba(120,80,80,.10);
+      backdrop-filter: blur(8px);
     }
     .scroll-hint::after {
       content: "";
@@ -524,6 +535,16 @@
       margin: 8px auto 0;
       background: linear-gradient(180deg, #94a3b8, transparent);
       animation: scrollHintBob 1.4s ease-in-out infinite;
+    }
+    @media (max-width: 900px) {
+      .hero-title { font-size: 52px; }
+      .hero-tag { margin-top: 92px; }
+      .scroll-hint { bottom: 26px; }
+    }
+    @media (max-width: 560px) {
+      .hero-title { font-size: 34px; white-space: normal; }
+      .hero-tag { margin-top: 104px; font-size: 11px; letter-spacing: .08em; }
+      .scroll-hint { bottom: 22px; font-size: 13px; }
     }
     @keyframes scrollHintBob {
       0%,100% { transform: translateY(0); opacity: .8; }
@@ -1556,15 +1577,12 @@
 
         {/* Hero section */}
         <section ref={heroRef} className="relative z-[2] flex min-h-screen flex-col items-center justify-center px-6 py-16 text-center">
-          <div className="home-credit absolute top-5 left-1/2 z-[5] w-[min(92vw,720px)] -translate-x-1/2 rounded-full bg-white/70 px-4 py-2 text-center text-xs font-black leading-6 text-slate-500 shadow-sm backdrop-blur md:text-sm">
+          <div className="home-credit absolute top-3 left-1/2 z-[5] w-[min(92vw,720px)] -translate-x-1/2 rounded-full bg-white/72 px-4 py-1.5 text-center text-xs font-black leading-5 text-slate-500 shadow-sm backdrop-blur md:text-sm">
             <p>設計者：新北市網溪國小 Kiki 老師</p>
             <p className="text-[11px] font-bold text-slate-400 md:text-xs">角色與插畫：Gemini Nano Banana Pro</p>
           </div>
           <p className="home-tag hero-tag">PBL · 我的儲蓄計畫能撐過真實生活嗎</p>
-          <h1 className="home-title hero-title">
-            儲蓄與<span className="accent">消費</span>
-            <br/>的選擇
-          </h1>
+          <h1 className="home-title hero-title">儲蓄與<span className="accent">消費</span>的選擇</h1>
           <div className="home-divider hero-divider"></div>
           <p className="home-subtitle hero-subtitle">Life Saving Monopoly</p>
 
