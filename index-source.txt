@@ -172,6 +172,42 @@
     .card-zone.drawing .stack-card:nth-child(3) { animation: drawCard .72s ease both; }
     .card-zone.drawing .stack-card:nth-child(3) .label { opacity: 0; }
     .card-zone.drawing .stack-card:nth-child(3)::before { opacity: .72; }
+    .card-zone.draw-ready {
+      filter: drop-shadow(0 0 18px rgba(255, 190, 59, .9));
+      animation: cardPromptPulse 1.1s ease-in-out infinite;
+    }
+    .card-guide {
+      position: absolute;
+      left: 50%;
+      top: -38px;
+      transform: translateX(-50%);
+      width: max-content;
+      max-width: 150px;
+      border-radius: 999px;
+      background: #fff7ed;
+      border: 3px solid #f59e0b;
+      color: #9a3412;
+      padding: 6px 10px;
+      font-size: 12px;
+      font-weight: 1000;
+      box-shadow: 0 6px 0 rgba(23,50,77,.16);
+      pointer-events: none;
+      z-index: 3;
+    }
+    .card-guide::after {
+      content: "";
+      position: absolute;
+      left: 50%;
+      bottom: -10px;
+      transform: translateX(-50%);
+      border-left: 8px solid transparent;
+      border-right: 8px solid transparent;
+      border-top: 10px solid #f59e0b;
+    }
+    @keyframes cardPromptPulse {
+      0%, 100% { transform: translateY(0) scale(1); }
+      50% { transform: translateY(-6px) scale(1.04); }
+    }
     @keyframes drawCard {
       0% { transform: translate(0,0) rotateY(0deg) scale(1); }
       55% { transform: translate(-180px,-70px) rotateY(95deg) scale(1.05); }
@@ -1034,6 +1070,34 @@
       players = movePlayerInGame(players, cur, Number(option.moveDelta || 0));
       return players;
     }
+    function describeOutcome(option, playerBefore, sourceTitle, correctText = "") {
+      const moneyEffect = Number(option.effect || 0);
+      const savedDelta = Number(option.savedDelta || 0);
+      const moveDelta = Number(option.moveDelta || 0);
+      const lines = [];
+      if (moneyEffect > 0) lines.push(`手上現金增加 ${money(moneyEffect)}`);
+      if (moneyEffect < 0) lines.push(`手上現金減少 ${money(Math.abs(moneyEffect))}`);
+      if (savedDelta > 0) lines.push(`目標帳戶存入 ${money(savedDelta)}`);
+      if (option.setCashToZero) lines.push("手上現金歸零");
+      if (typeof option.moveTo === "number") lines.push("退回起點");
+      if (moveDelta > 0) lines.push(`前進 ${moveDelta} 格`);
+      if (moveDelta < 0) lines.push(`退後 ${Math.abs(moveDelta)} 格`);
+      if (option.skipTurns) lines.push(`暫停 ${option.skipTurns} 回合反思`);
+      if (option.shield) lines.push("得到一次鼓勵護盾");
+      if (option.debtInterest) lines.push(`之後每天多付利息 ${money(option.debtInterest)}`);
+      if (option.ecoCount) lines.push("環保杯紀錄 +1");
+      if (option.interestBonus) lines.push(`依目前已存金額計算利息`);
+      if (!lines.length) lines.push("這次金錢沒有直接增減");
+      return {
+        title: sourceTitle,
+        playerName: playerBefore.name,
+        animal: playerBefore.animal,
+        color: playerBefore.color,
+        label: correctText || option.label || "這次選擇",
+        note: option.note || "",
+        lines,
+      };
+    }
     function buildDaySettlement(players) {
       return players.map(p => {
         if (!p.claimed || !p.active || p.cash < 0) return p;
@@ -1138,10 +1202,16 @@
       const modalCard = game.sharedModal && game.sharedModal.card;
       const players = applyOutcomeToCurrent(game, (modalCard && modalCard.title) || "選擇", option);
       const revealed = Number(option.effect || 0) + Number(option.savedDelta || 0);
-      return advanceTurn({
+      const nextGame = advanceTurn({
         ...game, players, sharedModal: null, pendingMove: null,
         message: `${me.name}：${option.note || ""} 揭曉影響：${money(revealed)}${option.savedDelta ? `，其中存入 ${money(option.savedDelta)}` : ""}。`
       });
+      return {
+        ...game,
+        players,
+        sharedModal: { type: "outcome", outcome: describeOutcome(option, me, (modalCard && modalCard.title) || "選擇"), nextGame },
+        pendingMove: null,
+      };
     }
     function applyFlowResult(game, correct) {
       const task = flowTasks[game.sharedModal.taskKey];
@@ -1153,10 +1223,25 @@
         kind: effect >= 0 ? "收入" : "支出",
         note: correct ? `流程排序正確，成功完成任務，獎勵 ${money(effect)}。` : "流程還需要再調整，先記錄一次學習成本 $30。",
       });
-      return advanceTurn({
+      const nextGame = advanceTurn({
         ...game, players, sharedModal: null, pendingMove: null,
         message: `${me.name} 完成「${task.title}」，${correct ? "完全答對" : "還要再練習"}。`
       });
+      return {
+        ...game,
+        players,
+        sharedModal: {
+          type: "outcome",
+          outcome: describeOutcome({
+            effect,
+            kind: effect >= 0 ? "收入" : "支出",
+            note: correct ? "流程排序正確，成功完成任務。" : "流程還需要再調整。",
+            label: correct ? "排序完全正確" : "排序還需要練習",
+          }, me, task.title),
+          nextGame,
+        },
+        pendingMove: null,
+      };
     }
     function applyQuestionAnswer(game, ans) {
       const q = game.sharedModal.question;
@@ -1168,10 +1253,20 @@
         : { title: "需要想要再想想", effect: 0, kind: "反思", note: q.why, afterCash: me.cash };
       const players = [...game.players];
       players[cur] = { ...me, cash: me.cash + ev.effect, dayLog: [...(me.dayLog || []), ev] };
-      return advanceTurn({
+      const nextGame = advanceTurn({
         ...game, players, sharedModal: null, pendingMove: null,
         message: correct ? `答對了！${q.why}` : `先沒關係，我們一起修正：${q.why}`,
       });
+      return {
+        ...game,
+        players,
+        sharedModal: {
+          type: "outcome",
+          outcome: describeOutcome({ effect: ev.effect, kind: ev.kind, note: ev.note, label: correct ? `選擇「${ans}」答對了` : `選擇「${ans}」再想想` }, me, ev.title),
+          nextGame,
+        },
+        pendingMove: null,
+      };
     }
     function startNextDay(game) {
       const players = game.players.map(p => ({
@@ -1181,6 +1276,16 @@
       }));
       const order = [];
       players.forEach((p, i) => { if (p.claimed && p.active) order.push(i); });
+      if (!order.length) {
+        return {
+          ...game, players,
+          turnsThisDay: 0,
+          day: (game.day || 1) + 1,
+          sharedModal: { type: "gameover" },
+          pendingMove: null,
+          message: "所有玩家都淘汰出局，請重新練習儲蓄和消費好習慣。",
+        };
+      }
       return {
         ...game, players,
         current: order.length ? order[0] : game.current,
@@ -2070,6 +2175,15 @@
           });
         } catch (e) { reportError(e); }
       }
+      async function continueOutcome() {
+        try {
+          await window.firebaseGame.tx(code, (data) => {
+            const modal = data.game.sharedModal;
+            if (!modal || modal.type !== "outcome" || !modal.nextGame) return null;
+            return { game: modal.nextGame };
+          });
+        } catch (e) { reportError(e); }
+      }
       async function forcePassTurn() {
         if (!isHost) return;
         if (!window.confirm("確定要強制跳過目前這位玩家、換下一位？")) return;
@@ -2181,19 +2295,21 @@
 
                 <button disabled={!canDrawChance}
                         onClick={() => drawCard("chance")}
-                        className={`card-zone chance ${g.drawing === "chance" ? "drawing" : ""}`}
+                        className={`card-zone chance ${g.drawing === "chance" ? "drawing" : ""} ${canDrawChance ? "draw-ready" : ""}`}
                         aria-label="抽機會卡">
+                  {canDrawChance && <span className="card-guide">點這裡翻機會卡</span>}
                   <img src="assets/card-chance-back.png" alt=""
                        className="absolute inset-0 h-full w-full rounded-2xl object-cover shadow-lg" />
-                  {canDrawChance && <span className="absolute -bottom-1 left-1/2 -translate-x-1/2 rounded-full bg-rose-500 px-2 py-0.5 text-[10px] font-black text-white shadow-md">點我抽</span>}
+                  {canDrawChance && <span className="absolute -bottom-4 left-1/2 -translate-x-1/2 rounded-full bg-rose-500 px-3 py-1 text-xs font-black text-white shadow-md">翻牌</span>}
                 </button>
                 <button disabled={!canDrawFate}
                         onClick={() => drawCard("fate")}
-                        className={`card-zone fate ${g.drawing === "fate" ? "drawing" : ""}`}
+                        className={`card-zone fate ${g.drawing === "fate" ? "drawing" : ""} ${canDrawFate ? "draw-ready" : ""}`}
                         aria-label="抽命運卡">
+                  {canDrawFate && <span className="card-guide">點這裡翻命運卡</span>}
                   <img src="assets/card-fate-back.png" alt=""
                        className="absolute inset-0 h-full w-full rounded-2xl object-cover shadow-lg" />
-                  {canDrawFate && <span className="absolute -bottom-1 left-1/2 -translate-x-1/2 rounded-full bg-teal-500 px-2 py-0.5 text-[10px] font-black text-white shadow-md">點我抽</span>}
+                  {canDrawFate && <span className="absolute -bottom-4 left-1/2 -translate-x-1/2 rounded-full bg-teal-500 px-3 py-1 text-xs font-black text-white shadow-md">翻牌</span>}
                 </button>
               </div>
 
@@ -2218,6 +2334,7 @@
                          onFinishFlow={finishFlow}
                          onAnswerQuestion={answerQuestion}
                          onContinue={continueDay}
+                         onContinueOutcome={continueOutcome}
                          onForcePass={forcePassTurn}
                          onReset={resetToLobby} />
           )}
@@ -2336,11 +2453,17 @@
         {isHost && (
           <button onClick={onReset}
                   className="mt-5 w-full rounded-2xl bg-gradient-to-r from-emerald-400 to-teal-500 px-4 py-4 text-xl font-black text-white shadow-[0_8px_0_rgba(16,185,129,.4)] active:translate-y-1 active:shadow-[0_2px_0_rgba(16,185,129,.4)]">
-            🔄 再玩一場（回到等待室）
+            🔄 重新練習儲蓄和消費好習慣
           </button>
         )}
         {!isHost && (
-          <p className="mt-5 text-sm font-black text-slate-500">等房主按「再玩一場」回到等待室</p>
+          <div className="mt-5 grid gap-2">
+            <p className="text-sm font-black text-slate-500">等房主按「重新練習儲蓄和消費好習慣」回到等待室</p>
+            <button onClick={() => navigate("/")}
+                    className="w-full rounded-2xl bg-slate-200 px-4 py-3 text-base font-black text-slate-700">
+              回首頁重新加入
+            </button>
+          </div>
         )}
       </div>;
     }
@@ -2422,7 +2545,7 @@
       </div>;
     }
 
-    function SharedModal({ modal, g, isMyTurn, isHost, currentPlayer, onApplyChoice, onApplyEvent, onFinishFlow, onAnswerQuestion, onContinue, onForcePass, onReset }) {
+    function SharedModal({ modal, g, isMyTurn, isHost, currentPlayer, onApplyChoice, onApplyEvent, onFinishFlow, onAnswerQuestion, onContinue, onContinueOutcome, onForcePass, onReset }) {
       // Active player can always interact; the host can interact too (for solo testing / rescuing stuck students)
       const interactive = isMyTurn || isHost;
       const asHostOverride = !isMyTurn && isHost;
@@ -2436,12 +2559,12 @@
       }, [modal.type, (modal.card && modal.card.title) || modal.taskKey || (modal.question && modal.question.q) || modal.type]);
       return <div className="modal-backdrop fixed inset-0 z-50 grid place-items-center p-4">
         <div ref={modalRef} className="max-h-[92vh] w-full max-w-3xl overflow-auto rounded-[30px] bg-white p-5 shadow-2xl">
-          {isMyTurn && modal.type !== "settle" && modal.type !== "gameover" && (
+          {isMyTurn && modal.type !== "settle" && modal.type !== "gameover" && modal.type !== "outcome" && (
             <p className="mb-3 flex items-center justify-center gap-2 rounded-2xl bg-gradient-to-r from-amber-300 to-rose-300 p-2 text-center text-base font-black text-white shadow-md">
               ✨ 你的回合，請做選擇 ✨
             </p>
           )}
-          {!isMyTurn && modal.type !== "settle" && modal.type !== "gameover" && (
+          {!isMyTurn && modal.type !== "settle" && modal.type !== "gameover" && modal.type !== "outcome" && (
             <p className="mb-3 flex items-center justify-center gap-2 rounded-2xl bg-amber-100 p-2 text-center text-sm font-black text-amber-800">
               <AnimalAvatar animal={currentPlayer.animal} color={currentPlayer.color} size="sm" />
               ⏳ {currentPlayer.name} 正在做選擇{asHostOverride ? "（你是房主，可以代為操作）" : "..."}
@@ -2501,13 +2624,36 @@
               </div>
             </>
           )}
+          {modal.type === "outcome" && (
+            <div className="text-center">
+              <div className="mx-auto grid h-20 w-20 place-items-center rounded-full border-4 bg-white shadow-lg" style={{ borderColor: modal.outcome.color }}>
+                <AnimalAvatar animal={modal.outcome.animal} color={modal.outcome.color} size="md" />
+              </div>
+              <span className="mt-4 inline-flex rounded-full bg-amber-500 px-4 py-1 text-sm font-black text-white">選擇後果揭曉</span>
+              <h2 className="mt-3 text-3xl font-black">{modal.outcome.title}</h2>
+              <p className="mt-2 text-lg font-black text-slate-700">{modal.outcome.playerName} 選擇：{modal.outcome.label}</p>
+              <div className="mt-5 grid gap-3 text-left">
+                {modal.outcome.lines.map((line, i) => (
+                  <div key={i} className="rounded-2xl border-2 border-amber-200 bg-amber-50 p-4 text-xl font-black text-amber-900">
+                    ✦ {line}
+                  </div>
+                ))}
+              </div>
+              {modal.outcome.note && <p className="mt-4 rounded-2xl bg-slate-50 p-4 text-left font-bold leading-7 text-slate-700">{modal.outcome.note}</p>}
+              <button disabled={!interactive} onClick={onContinueOutcome}
+                      className="mt-5 w-full rounded-2xl bg-gradient-to-r from-emerald-400 to-teal-500 px-4 py-4 text-xl font-black text-white shadow-[0_8px_0_rgba(16,185,129,.35)] disabled:opacity-60">
+                我知道了，繼續遊戲
+              </button>
+              {!interactive && <p className="mt-3 text-sm font-black text-slate-500">等 {currentPlayer.name} 或房主按下繼續</p>}
+            </div>
+          )}
           {modal.type === "settle" && (
             <SettleScreen modal={modal} g={g} onContinue={onContinue} />
           )}
           {modal.type === "gameover" && (
             <GameOverScreen g={g} isHost={isHost} onReset={onReset} />
           )}
-          {isHost && modal.type !== "settle" && modal.type !== "gameover" && (
+          {isHost && modal.type !== "settle" && modal.type !== "gameover" && modal.type !== "outcome" && (
             <div className="mt-4 border-t border-slate-200 pt-3 text-center">
               <button onClick={onForcePass}
                       className="rounded-xl bg-slate-200 px-4 py-1.5 text-xs font-black text-slate-600 hover:bg-rose-200 hover:text-rose-700">
