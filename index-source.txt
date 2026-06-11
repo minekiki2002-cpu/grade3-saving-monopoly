@@ -2509,7 +2509,7 @@
     }
 
     function GameOverScreen({ g, isHost, onReset }) {
-      const survivors = g.players.filter(p => p.claimed && p.saved > 0);
+      const survivors = g.players.filter(p => p.claimed && p.saved >= p.target && p.target > 0 && p.cash >= 0);
       const winners = [...survivors].sort((a, b) => b.saved - a.saved);
       const top = winners[0];
       const headRef = useRef(null);
@@ -2527,7 +2527,7 @@
         <div ref={headRef}>
           <p className="text-7xl">{top ? "🏆" : "💸"}</p>
           <span className="mt-3 inline-flex rounded-full bg-rose-500 px-4 py-1 text-sm font-black text-white">遊戲結束</span>
-          <h2 className="mt-3 text-3xl font-black">{top ? `${top.name} 是儲蓄冠軍！` : "所有玩家都出局了"}</h2>
+          <h2 className="mt-3 text-3xl font-black">{top ? `${top.name} 是儲蓄冠軍！` : "重新練習儲蓄與消費好習慣"}</h2>
         </div>
         {top && (
           <p className="mt-2 text-lg font-black text-amber-700">最終存款 ${top.saved} ✦ 目標 {top.goal}</p>
@@ -2548,12 +2548,12 @@
         {isHost && (
           <button onClick={onReset}
                   className="mt-5 w-full rounded-2xl bg-gradient-to-r from-emerald-400 to-teal-500 px-4 py-4 text-xl font-black text-white shadow-[0_8px_0_rgba(16,185,129,.4)] active:translate-y-1 active:shadow-[0_2px_0_rgba(16,185,129,.4)]">
-            🔄 重新練習儲蓄和消費好習慣
+            🔄 重新練習儲蓄與消費好習慣
           </button>
         )}
         {!isHost && (
           <div className="mt-5 grid gap-2">
-            <p className="text-sm font-black text-slate-500">等房主按「重新練習儲蓄和消費好習慣」回到等待室</p>
+            <p className="text-sm font-black text-slate-500">等房主按「重新練習儲蓄與消費好習慣」回到等待室</p>
             <button onClick={() => navigate("/")}
                     className="w-full rounded-2xl bg-slate-200 px-4 py-3 text-base font-black text-slate-700">
               回首頁重新加入
